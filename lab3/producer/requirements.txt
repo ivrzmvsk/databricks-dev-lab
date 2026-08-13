@@ -1,0 +1,3 @@
+azure-eventhub==5.15.1
+requests-sse==0.5.3
+python-dotenv==1.0.1
