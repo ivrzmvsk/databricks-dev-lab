@@ -1,0 +1,19 @@
+resources:
+  jobs:
+    lab6_governance_demo:
+      name: lab6-wikimedia-governance-demo
+      description: Temporarily restrict the current user's access mapping, assert enforcement, restore it.
+      max_concurrent_runs: 1
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: source_schema
+          default: ${var.source_schema}
+        - name: source_code_path
+          default: ${workspace.file_path}/src
+      tasks:
+        - task_key: enforce_and_verify
+          notebook_task:
+            notebook_path: ../notebooks/lab6_06_security_demo.py

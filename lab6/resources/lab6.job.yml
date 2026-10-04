@@ -1,0 +1,53 @@
+resources:
+  jobs:
+    lab6_gold_job:
+      name: lab6-wikimedia-gold
+      description: Build and validate 12 ordinary Delta tables from Lab 5 Wikipedia Silver.
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      queue:
+        enabled: true
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: source_schema
+          default: ${var.source_schema}
+        - name: source_code_path
+          default: ${workspace.file_path}/src
+        - name: metadata_path
+          default: /Volumes/${var.catalog}/${var.schema}/lab6_assets/metadata/wikimedia.json
+        - name: refresh_reference
+          default: ${var.refresh_reference}
+        - name: reader_principal
+          default: ${var.reader_principal}
+      tasks:
+        - task_key: reference
+          notebook_task:
+            notebook_path: ../notebooks/lab6_01_reference.py
+        - task_key: gold
+          depends_on:
+            - task_key: reference
+          notebook_task:
+            notebook_path: ../notebooks/lab6_02_build_gold.py
+        - task_key: governance
+          depends_on:
+            - task_key: gold
+          notebook_task:
+            notebook_path: ../notebooks/lab6_03_governance.py
+        - task_key: validation
+          depends_on:
+            - task_key: governance
+          notebook_task:
+            notebook_path: ../notebooks/lab6_04_validate.py
+        - task_key: volume
+          depends_on:
+            - task_key: validation
+          notebook_task:
+            notebook_path: ../notebooks/lab6_05_volume.py
+        - task_key: evaluate_volume
+          depends_on:
+            - task_key: volume
+          alert_task:
+            alert_id: ${resources.alerts.lab6_volume_alert.id}

@@ -1,0 +1,96 @@
+bundle:
+  name: lab6_wikimedia_gold
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    default: dbr_dev
+  schema:
+    default: ivanrazumovskyi_lab6
+  source_schema:
+    default: ivanrazumovskyi_lab5
+  warehouse_id:
+    description: Existing SQL warehouse in the selected workspace; required for Azure Dev deployment
+  refresh_reference:
+    description: Fetch SiteMatrix and namespace metadata when the Gold Job is eventually run
+    default: "false"
+  azure_node_type:
+    description: Classic compute node type, matching Lab 5 Azure Dev
+    default: Standard_D4ds_v5
+  azure_spark_version:
+    description: Unity Catalog compatible runtime for the Azure Dev job clusters
+    default: 17.3.x-scala2.13
+  reader_principal:
+    description: Account user or group receiving SELECT on analytical tables only
+    default: test@gmail.com
+
+workspace:
+  root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+sync:
+  exclude:
+    - tests/**
+    - evidence/**
+    - assets/**
+    - screenshots/**
+
+targets:
+  personal:
+    default: true
+    mode: development
+    workspace:
+      profile: personal-env
+    variables:
+      catalog: workspace
+      warehouse_id: 6fec7d20a958edd1
+  azure_dev:
+    mode: development
+    workspace:
+      host: https://adb-7405604503619901.1.azuredatabricks.net
+    presets:
+      trigger_pause_status: PAUSED
+    variables:
+      catalog: dbr_dev
+      refresh_reference: "true"
+      reader_principal: ${workspace.current_user.userName}
+    resources:
+      jobs:
+        lab6_gold_job:
+          job_clusters:
+            - job_cluster_key: lab6_classic
+              new_cluster: &azure_cluster
+                spark_version: ${var.azure_spark_version}
+                node_type_id: ${var.azure_node_type}
+                num_workers: 1
+                data_security_mode: USER_ISOLATION
+                spark_conf:
+                  spark.sql.session.timeZone: UTC
+          tasks:
+            - task_key: reference
+              job_cluster_key: lab6_classic
+            - task_key: gold
+              job_cluster_key: lab6_classic
+            - task_key: governance
+              job_cluster_key: lab6_classic
+            - task_key: validation
+              job_cluster_key: lab6_classic
+            - task_key: volume
+              job_cluster_key: lab6_classic
+        lab6_governance_demo:
+          job_clusters:
+            - job_cluster_key: lab6_classic
+              new_cluster: *azure_cluster
+          tasks:
+            - task_key: enforce_and_verify
+              job_cluster_key: lab6_classic
+        lab6_volume_drop_demo:
+          job_clusters:
+            - job_cluster_key: lab6_classic
+              new_cluster: *azure_cluster
+          tasks:
+            - task_key: simulate_drop
+              job_cluster_key: lab6_classic
+            - task_key: restore_gold
+              job_cluster_key: lab6_classic

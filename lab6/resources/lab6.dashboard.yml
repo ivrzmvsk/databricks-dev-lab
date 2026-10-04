@@ -1,0 +1,9 @@
+resources:
+  dashboards:
+    lab6_dashboard:
+      display_name: Lab 6 - Wikimedia Activity
+      file_path: ../dashboards/wikimedia_activity.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.schema}
+      embed_credentials: false

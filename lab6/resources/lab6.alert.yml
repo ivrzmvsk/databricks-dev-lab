@@ -1,0 +1,40 @@
+resources:
+  alerts:
+    lab6_volume_alert:
+      display_name: Lab 6 - Wikimedia Gold Volume Drop
+      warehouse_id: ${var.warehouse_id}
+      query_text: |
+        WITH baseline AS (
+          SELECT expected_count, threshold_pct
+          FROM ${var.catalog}.${var.schema}.ops_volume_log
+          WHERE scenario IN ('normal', 'recovered') AND NOT should_alert
+          ORDER BY measured_at DESC
+          LIMIT 1
+        ), observed AS (
+          SELECT COUNT(*) AS observed_count FROM ${var.catalog}.${var.schema}.fact_edits
+        )
+        SELECT observed_count, COALESCE(expected_count, 0) AS expected_count,
+          CASE WHEN expected_count > 0
+            THEN GREATEST(0D, 100D * (expected_count - observed_count) / expected_count)
+            ELSE 0D END AS drop_pct,
+          CASE WHEN expected_count > 0 AND
+            100D * (expected_count - observed_count) / expected_count >= threshold_pct
+            THEN 1 ELSE 0 END AS should_alert
+        FROM observed LEFT JOIN baseline ON TRUE
+      evaluation:
+        source:
+          name: should_alert
+        comparison_operator: EQUAL
+        threshold:
+          value:
+            double_value: 1
+        notification:
+          notify_on_ok: true
+          subscriptions:
+            - user_email: ${workspace.current_user.userName}
+      schedule:
+        quartz_cron_schedule: "0 0 * * * ?"
+        timezone_id: Europe/Warsaw
+        pause_status: PAUSED
+      custom_summary: "Lab 6: Wikimedia Gold data volume changed"
+      custom_description: "Demo monitors Gold snapshot row count against its recorded baseline. It does not measure global Wikimedia activity."
