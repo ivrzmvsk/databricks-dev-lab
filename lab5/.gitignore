@@ -1,0 +1,23 @@
+# Databricks CLI / bundle local state
+.databricks/
+
+# Secrets: keep only env.example in git
+.env
+.env.*
+!env.example
+producer/.env
+*.pem
+*.key
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store

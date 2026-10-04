@@ -1,0 +1,34 @@
+# Main pipeline shared by the two deployment environments.
+targets:
+  azure_dev:
+    resources:
+      pipelines:
+        lab5_pipeline: &main_pipeline
+          name: lab5-netflix-wikipedia-${bundle.target}
+          catalog: ${var.catalog}
+          schema: ${var.schema}
+          edition: ADVANCED
+          channel: CURRENT
+          continuous: false
+          libraries:
+            - file:
+                path: ../src/bronze.py
+            - file:
+                path: ../src/silver.py
+            - file:
+                path: ../src/quality_demo.py
+          configuration:
+            lab5.source_code_path: ${workspace.file_path}/src
+            lab5.source_csv_path: ${var.source_csv_path}
+            lab5.eventhub_namespace: ${var.eventhub_namespace}
+            lab5.eventhub_name: ${var.eventhub_name}
+            lab5.secret_scope: ${var.secret_scope}
+            lab5.secret_key: ${var.secret_key}
+            lab5.max_offsets_per_trigger: "1000"
+            lab5.quality_demo_enabled: ${var.quality_demo}
+            spark.sql.session.timeZone: UTC
+  personal:
+    resources:
+      pipelines:
+        lab5_pipeline:
+          <<: *main_pipeline
