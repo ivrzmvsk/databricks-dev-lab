@@ -156,11 +156,6 @@ RLS and CLS check on the full capture: 23,843 rows -> 7,826 rows for one wiki, 3
 
 ## Reproducibility
 
-For Azure Dev resource creation without executing notebooks or evaluating alerts,
-see [AZURE_DEPLOY.md](AZURE_DEPLOY.md). The `azure_dev` target follows Lab 5's
-workspace/catalog and classic compute configuration; its SQL warehouse ID must
-be supplied at deployment time.
-
 - SiteMatrix is stored as a snapshot (`assets/wikimedia.json`) in a Unity Catalog volume, because outbound network access is restricted in Free Edition. The Job can also refresh it from the public API.
 - Gold reads one pinned Delta version of Silver, recorded as the `lab6.source_version` property of `fact_edits`, so validation compares against exactly the data that was used.
 - Everything (job, demo jobs, dashboard, alert) is defined in the bundle and deployed with `databricks bundle deploy -t personal`.
