@@ -1,4 +1,4 @@
-# Main pipeline shared by the two deployment environments.
+# Main pipeline shared by the deployment environments.
 targets:
   azure_dev:
     resources:
@@ -28,6 +28,16 @@ targets:
             lab5.quality_demo_enabled: ${var.quality_demo}
             spark.sql.session.timeZone: UTC
   personal:
+    resources:
+      pipelines:
+        lab5_pipeline:
+          <<: *main_pipeline
+  azure_trial:
+    resources:
+      pipelines:
+        lab5_pipeline:
+          <<: *main_pipeline
+  azure_trial_2:
     resources:
       pipelines:
         lab5_pipeline:

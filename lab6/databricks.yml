@@ -12,7 +12,7 @@ variables:
   source_schema:
     default: ivanrazumovskyi_lab5
   warehouse_id:
-    description: Existing SQL warehouse in the selected workspace; required for Azure Dev deployment
+    description: Existing SQL warehouse in the selected workspace; supply explicitly for Azure Dev
   refresh_reference:
     description: Fetch SiteMatrix and namespace metadata when the Gold Job is eventually run
     default: "false"
@@ -45,6 +45,28 @@ targets:
     variables:
       catalog: workspace
       warehouse_id: 6fec7d20a958edd1
+  azure_trial:
+    mode: development
+    workspace:
+      profile: azure-trial
+    presets:
+      trigger_pause_status: PAUSED
+    variables:
+      catalog: dbr_dev_trial
+      warehouse_id: c0152a553a7a830f
+      refresh_reference: "true"
+      reader_principal: ${workspace.current_user.userName}
+  azure_trial_2:
+    mode: development
+    workspace:
+      profile: azure_trial_2
+    presets:
+      trigger_pause_status: PAUSED
+    variables:
+      catalog: dbr_dev
+      warehouse_id: d8b8ff9942968cb8
+      refresh_reference: "true"
+      reader_principal: ${workspace.current_user.userName}
   azure_dev:
     mode: development
     workspace:
@@ -72,11 +94,23 @@ targets:
               job_cluster_key: lab6_classic
             - task_key: gold
               job_cluster_key: lab6_classic
-            - task_key: governance
-              job_cluster_key: lab6_classic
             - task_key: validation
               job_cluster_key: lab6_classic
             - task_key: volume
+              job_cluster_key: lab6_classic
+        lab6_setup_job:
+          job_clusters:
+            - job_cluster_key: lab6_classic
+              new_cluster: *azure_cluster
+          tasks:
+            - task_key: setup
+              job_cluster_key: lab6_classic
+        lab6_governance_job:
+          job_clusters:
+            - job_cluster_key: lab6_classic
+              new_cluster: *azure_cluster
+          tasks:
+            - task_key: governance
               job_cluster_key: lab6_classic
         lab6_governance_demo:
           job_clusters:
@@ -93,4 +127,10 @@ targets:
             - task_key: simulate_drop
               job_cluster_key: lab6_classic
             - task_key: restore_gold
+              job_cluster_key: lab6_classic
+            - task_key: measure_drop
+              job_cluster_key: lab6_classic
+            - task_key: validate_recovery
+              job_cluster_key: lab6_classic
+            - task_key: record_recovery
               job_cluster_key: lab6_classic

@@ -19,17 +19,36 @@ resources:
             notebook_path: ../notebooks/lab6_07_simulate_drop.py
         - task_key: evaluate_drop
           depends_on:
-            - task_key: simulate_drop
+            - task_key: measure_drop
           alert_task:
             alert_id: ${resources.alerts.lab6_volume_alert.id}
+        - task_key: measure_drop
+          depends_on:
+            - task_key: simulate_drop
+          notebook_task:
+            notebook_path: ../notebooks/lab6_05_volume.py
+            base_parameters:
+              scenario: simulated_drop
         - task_key: restore_gold
           depends_on:
             - task_key: evaluate_drop
           run_if: ALL_DONE
           notebook_task:
-            notebook_path: ../notebooks/lab6_08_restore.py
-        - task_key: evaluate_recovery
+            notebook_path: ../notebooks/lab6_02_build_gold.py
+        - task_key: validate_recovery
           depends_on:
             - task_key: restore_gold
+          notebook_task:
+            notebook_path: ../notebooks/lab6_04_validate.py
+        - task_key: record_recovery
+          depends_on:
+            - task_key: validate_recovery
+          notebook_task:
+            notebook_path: ../notebooks/lab6_05_volume.py
+            base_parameters:
+              scenario: recovered
+        - task_key: evaluate_recovery
+          depends_on:
+            - task_key: record_recovery
           alert_task:
             alert_id: ${resources.alerts.lab6_volume_alert.id}

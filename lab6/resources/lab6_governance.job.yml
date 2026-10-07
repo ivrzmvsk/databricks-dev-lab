@@ -1,0 +1,21 @@
+resources:
+  jobs:
+    lab6_governance_job:
+      name: lab6-wikimedia-governance
+      description: Install policy functions, RLS, CLS and analytical grants after initial Gold creation or policy changes.
+      max_concurrent_runs: 1
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: source_schema
+          default: ${var.source_schema}
+        - name: source_code_path
+          default: ${workspace.file_path}/src
+        - name: reader_principal
+          default: ${var.reader_principal}
+      tasks:
+        - task_key: governance
+          notebook_task:
+            notebook_path: ../notebooks/lab6_03_governance.py

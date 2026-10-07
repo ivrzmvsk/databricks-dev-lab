@@ -68,7 +68,7 @@ def main():
     schema = json.loads(subprocess.check_output(["databricks", "bundle", "schema"], text=True))
     normalize_go_patterns(schema)
     jsonschema.validate(bundle, schema)
-    assert set(bundle["targets"]) == {"azure_dev", "personal"}
+    assert set(bundle["targets"]) == {"azure_dev", "personal", "azure_trial", "azure_trial_2"}
     for target, config in bundle["targets"].items():
         overrides = deepcopy(config)
         target_variables = overrides.pop("variables", {})
@@ -87,8 +87,10 @@ def main():
         assert library_names == expected, f"{target}: unexpected or duplicate libraries: {library_names}"
         assert pipeline["edition"] == "ADVANCED"
         assert pipeline["continuous"] is False
-        if target == "personal":
+        if target in ["personal", "azure_trial", "azure_trial_2"]:
             assert pipeline["serverless"] is True and not pipeline.get("clusters")
+        if target in ["azure_trial", "azure_trial_2"]:
+            assert "run_as" not in pipeline and "run_as" not in resolved
         print(f"PASS: {target} offline bundle schema")
     print("PASS: Python/notebook syntax and byte-identical Lab 3 producer")
 

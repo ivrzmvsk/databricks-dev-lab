@@ -1,0 +1,19 @@
+resources:
+  jobs:
+    lab6_setup_job:
+      name: lab6-wikimedia-setup
+      description: Provision schema, metadata Volume, access mapping and operational history separately from refresh.
+      max_concurrent_runs: 1
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: source_schema
+          default: ${var.source_schema}
+        - name: source_code_path
+          default: ${workspace.file_path}/src
+      tasks:
+        - task_key: setup
+          notebook_task:
+            notebook_path: ../notebooks/lab6_00_setup.py

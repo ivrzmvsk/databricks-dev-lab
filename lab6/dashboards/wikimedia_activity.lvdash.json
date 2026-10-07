@@ -1,8 +1,8 @@
 {
   "datasets": [
     {
-      "name": "edits",
       "displayName": "edits",
+      "name": "edits",
       "queryLines": [
         "SELECT f.event_id, f.event_time, f.event_date, f.bucket_start, f.wiki,\n",
         "      w.language_code, w.project_code, w.site_name, p.title, e.user_name,\n",
@@ -17,8 +17,8 @@
       ]
     },
     {
-      "name": "five",
       "displayName": "five",
+      "name": "five",
       "queryLines": [
         "SELECT a.*, CAST(a.bucket_start AS DATE) AS event_date,\n",
         "      w.language_code, w.project_code FROM agg_wiki_5min a\n",
@@ -26,16 +26,16 @@
       ]
     },
     {
-      "name": "daily",
       "displayName": "daily",
+      "name": "daily",
       "queryLines": [
         "SELECT a.*, w.language_code, w.project_code FROM agg_wiki_daily a\n",
         "      JOIN dim_wiki w ON a.wiki_key = w.wiki_key"
       ]
     },
     {
-      "name": "pages",
       "displayName": "pages",
+      "name": "pages",
       "queryLines": [
         "WITH top_pages AS (\n",
         "      SELECT page_key FROM agg_page_activity\n",
@@ -50,10 +50,15 @@
   ],
   "pages": [
     {
-      "name": "overview",
-      "displayName": "Wikimedia activity \u2014 captured sample",
+      "displayName": "Wikimedia activity — captured sample",
       "layout": [
         {
+          "position": {
+            "height": 3,
+            "width": 3,
+            "x": 0,
+            "y": 0
+          },
           "widget": {
             "name": "total_edits",
             "queries": [
@@ -61,22 +66,19 @@
                 "name": "main",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "value",
-                      "expression": "COUNT(*)"
+                      "expression": "COUNT(*)",
+                      "name": "value"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 2,
-              "widgetType": "counter",
-              "frame": {
-                "title": "Captured edits",
-                "showTitle": true
+              "data": {
+                "queryName": "main"
               },
               "encodings": {
                 "value": {
@@ -84,19 +86,22 @@
                   "rowNumber": 0
                 }
               },
-              "data": {
-                "queryName": "main"
-              }
+              "frame": {
+                "showTitle": true,
+                "title": "Captured edits"
+              },
+              "version": 2,
+              "widgetType": "counter"
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 0,
-            "width": 3,
-            "height": 3
           }
         },
         {
+          "position": {
+            "height": 3,
+            "width": 3,
+            "x": 3,
+            "y": 0
+          },
           "widget": {
             "name": "total_editors",
             "queries": [
@@ -104,22 +109,19 @@
                 "name": "main",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "value",
-                      "expression": "COUNT(DISTINCT editor_key)"
+                      "expression": "COUNT(DISTINCT editor_key)",
+                      "name": "value"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 2,
-              "widgetType": "counter",
-              "frame": {
-                "title": "Observed editors",
-                "showTitle": true
+              "data": {
+                "queryName": "main"
               },
               "encodings": {
                 "value": {
@@ -127,19 +129,22 @@
                   "rowNumber": 0
                 }
               },
-              "data": {
-                "queryName": "main"
-              }
+              "frame": {
+                "showTitle": true,
+                "title": "Observed editors"
+              },
+              "version": 2,
+              "widgetType": "counter"
             }
-          },
-          "position": {
-            "x": 3,
-            "y": 0,
-            "width": 3,
-            "height": 3
           }
         },
         {
+          "position": {
+            "height": 3,
+            "width": 3,
+            "x": 6,
+            "y": 0
+          },
           "widget": {
             "name": "total_pages",
             "queries": [
@@ -147,22 +152,19 @@
                 "name": "main",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "value",
-                      "expression": "COUNT(DISTINCT page_key)"
+                      "expression": "COUNT(DISTINCT page_key)",
+                      "name": "value"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 2,
-              "widgetType": "counter",
-              "frame": {
-                "title": "Edited pages",
-                "showTitle": true
+              "data": {
+                "queryName": "main"
               },
               "encodings": {
                 "value": {
@@ -170,19 +172,22 @@
                   "rowNumber": 0
                 }
               },
-              "data": {
-                "queryName": "main"
-              }
+              "frame": {
+                "showTitle": true,
+                "title": "Edited pages"
+              },
+              "version": 2,
+              "widgetType": "counter"
             }
-          },
-          "position": {
-            "x": 6,
-            "y": 0,
-            "width": 3,
-            "height": 3
           }
         },
         {
+          "position": {
+            "height": 3,
+            "width": 3,
+            "x": 9,
+            "y": 0
+          },
           "widget": {
             "name": "net_bytes",
             "queries": [
@@ -190,22 +195,19 @@
                 "name": "main",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "value",
-                      "expression": "SUM(bytes_delta)"
+                      "expression": "SUM(bytes_delta)",
+                      "name": "value"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 2,
-              "widgetType": "counter",
-              "frame": {
-                "title": "Net size change (bytes)",
-                "showTitle": true
+              "data": {
+                "queryName": "main"
               },
               "encodings": {
                 "value": {
@@ -213,19 +215,22 @@
                   "rowNumber": 0
                 }
               },
-              "data": {
-                "queryName": "main"
-              }
+              "frame": {
+                "showTitle": true,
+                "title": "Net size change (bytes)"
+              },
+              "version": 2,
+              "widgetType": "counter"
             }
-          },
-          "position": {
-            "x": 9,
-            "y": 0,
-            "width": 3,
-            "height": 3
           }
         },
         {
+          "position": {
+            "height": 5,
+            "width": 6,
+            "x": 0,
+            "y": 3
+          },
           "widget": {
             "name": "trend",
             "queries": [
@@ -233,26 +238,23 @@
                 "name": "main",
                 "query": {
                   "datasetName": "five",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "bucket",
-                      "expression": "bucket_start"
+                      "expression": "bucket_start",
+                      "name": "bucket"
                     },
                     {
-                      "name": "edits",
-                      "expression": "SUM(edit_count)"
+                      "expression": "SUM(edit_count)",
+                      "name": "edits"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 3,
-              "widgetType": "line",
-              "frame": {
-                "title": "Captured edits / 5 minutes (UTC)",
-                "showTitle": true
+              "data": {
+                "queryName": "main"
               },
               "encodings": {
                 "x": {
@@ -268,19 +270,22 @@
                   }
                 }
               },
-              "data": {
-                "queryName": "main"
-              }
+              "frame": {
+                "showTitle": true,
+                "title": "Captured edits / 5 minutes (UTC)"
+              },
+              "version": 3,
+              "widgetType": "line"
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 3,
-            "width": 6,
-            "height": 5
           }
         },
         {
+          "position": {
+            "height": 5,
+            "width": 6,
+            "x": 6,
+            "y": 3
+          },
           "widget": {
             "name": "wiki_rank",
             "queries": [
@@ -288,26 +293,23 @@
                 "name": "main",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "wiki",
-                      "expression": "wiki"
+                      "expression": "wiki",
+                      "name": "wiki"
                     },
                     {
-                      "name": "edits",
-                      "expression": "COUNT(*)"
+                      "expression": "COUNT(*)",
+                      "name": "edits"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "frame": {
-                "title": "Activity by wiki",
-                "showTitle": true
+              "data": {
+                "queryName": "main"
               },
               "encodings": {
                 "x": {
@@ -323,19 +325,22 @@
                   }
                 }
               },
-              "data": {
-                "queryName": "main"
-              }
+              "frame": {
+                "showTitle": true,
+                "title": "Activity by wiki"
+              },
+              "version": 3,
+              "widgetType": "bar"
             }
-          },
-          "position": {
-            "x": 6,
-            "y": 3,
-            "width": 6,
-            "height": 5
           }
         },
         {
+          "position": {
+            "height": 5,
+            "width": 6,
+            "x": 0,
+            "y": 8
+          },
           "widget": {
             "name": "automation",
             "queries": [
@@ -343,26 +348,23 @@
                 "name": "main",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "type",
-                      "expression": "editor_type"
+                      "expression": "editor_type",
+                      "name": "type"
                     },
                     {
-                      "name": "edits",
-                      "expression": "COUNT(*)"
+                      "expression": "COUNT(*)",
+                      "name": "edits"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 3,
-              "widgetType": "pie",
-              "frame": {
-                "title": "Bots and human edits",
-                "showTitle": true
+              "data": {
+                "queryName": "main"
               },
               "encodings": {
                 "angle": {
@@ -378,19 +380,22 @@
                   }
                 }
               },
-              "data": {
-                "queryName": "main"
-              }
+              "frame": {
+                "showTitle": true,
+                "title": "Bots and human edits"
+              },
+              "version": 3,
+              "widgetType": "pie"
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 8,
-            "width": 6,
-            "height": 5
           }
         },
         {
+          "position": {
+            "height": 5,
+            "width": 6,
+            "x": 6,
+            "y": 8
+          },
           "widget": {
             "name": "namespaces",
             "queries": [
@@ -398,26 +403,23 @@
                 "name": "main",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "namespace",
-                      "expression": "namespace_name"
+                      "expression": "namespace_name",
+                      "name": "namespace"
                     },
                     {
-                      "name": "edits",
-                      "expression": "COUNT(*)"
+                      "expression": "COUNT(*)",
+                      "name": "edits"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "frame": {
-                "title": "Namespace activity",
-                "showTitle": true
+              "data": {
+                "queryName": "main"
               },
               "encodings": {
                 "x": {
@@ -433,19 +435,22 @@
                   }
                 }
               },
-              "data": {
-                "queryName": "main"
-              }
+              "frame": {
+                "showTitle": true,
+                "title": "Namespace activity"
+              },
+              "version": 3,
+              "widgetType": "bar"
             }
-          },
-          "position": {
-            "x": 6,
-            "y": 8,
-            "width": 6,
-            "height": 5
           }
         },
         {
+          "position": {
+            "height": 5,
+            "width": 6,
+            "x": 0,
+            "y": 13
+          },
           "widget": {
             "name": "pages",
             "queries": [
@@ -453,38 +458,33 @@
                 "name": "main",
                 "query": {
                   "datasetName": "pages",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "page",
-                      "expression": "`page_label`"
+                      "expression": "`page_label`",
+                      "name": "page"
                     },
-                    {
-                      "name": "edits",
-                      "expression": "SUM(edit_count)"
-                    }
-                  ],
-                  "disaggregated": false,
-                  "orders": [
                     {
                       "expression": "SUM(edit_count)",
-                      "direction": "DESC"
+                      "name": "edits"
+                    }
+                  ],
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "SUM(edit_count)"
                     },
                     {
-                      "expression": "`page_label`",
-                      "direction": "ASC"
+                      "direction": "ASC",
+                      "expression": "`page_label`"
                     }
                   ]
                 }
               }
             ],
             "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "frame": {
-                "title": "Top 20 pages \u2014 captured sample",
-                "showTitle": true,
-                "description": "Top 20 across the captured sample. Filters narrow this list.",
-                "showDescription": true
+              "data": {
+                "queryName": "main"
               },
               "encodings": {
                 "x": {
@@ -500,19 +500,24 @@
                   }
                 }
               },
-              "data": {
-                "queryName": "main"
-              }
+              "frame": {
+                "description": "Top 20 across the captured sample. Filters narrow this list.",
+                "showDescription": true,
+                "showTitle": true,
+                "title": "Top 20 pages — captured sample"
+              },
+              "version": 3,
+              "widgetType": "bar"
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 13,
-            "width": 6,
-            "height": 5
           }
         },
         {
+          "position": {
+            "height": 5,
+            "width": 6,
+            "x": 6,
+            "y": 13
+          },
           "widget": {
             "name": "daily",
             "queries": [
@@ -520,26 +525,23 @@
                 "name": "main",
                 "query": {
                   "datasetName": "daily",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "date",
-                      "expression": "event_date"
+                      "expression": "event_date",
+                      "name": "date"
                     },
                     {
-                      "name": "edits",
-                      "expression": "SUM(edit_count)"
+                      "expression": "SUM(edit_count)",
+                      "name": "edits"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "frame": {
-                "title": "Captured edits by day \u2014 partial coverage",
-                "showTitle": true
+              "data": {
+                "queryName": "main"
               },
               "encodings": {
                 "x": {
@@ -555,27 +557,30 @@
                   }
                 }
               },
-              "data": {
-                "queryName": "main"
-              }
+              "frame": {
+                "showTitle": true,
+                "title": "Captured edits by day — partial coverage"
+              },
+              "version": 3,
+              "widgetType": "bar"
             }
-          },
-          "position": {
-            "x": 6,
-            "y": 13,
-            "width": 6,
-            "height": 5
           }
         }
       ],
-      "pageType": "PAGE_TYPE_CANVAS",
-      "layoutVersion": "GRID_V1"
+      "layoutVersion": "GRID_V1",
+      "name": "overview",
+      "pageType": "PAGE_TYPE_CANVAS"
     },
     {
-      "name": "filters",
       "displayName": "Filters",
       "layout": [
         {
+          "position": {
+            "height": 2,
+            "width": 3,
+            "x": 0,
+            "y": 0
+          },
           "widget": {
             "name": "filter_event_date",
             "queries": [
@@ -583,62 +588,56 @@
                 "name": "edits_event_date",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "event_date",
-                      "expression": "`event_date`"
+                      "expression": "`event_date`",
+                      "name": "event_date"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "five_event_date",
                 "query": {
                   "datasetName": "five",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "event_date",
-                      "expression": "`event_date`"
+                      "expression": "`event_date`",
+                      "name": "event_date"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "daily_event_date",
                 "query": {
                   "datasetName": "daily",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "event_date",
-                      "expression": "`event_date`"
+                      "expression": "`event_date`",
+                      "name": "event_date"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "pages_event_date",
                 "query": {
                   "datasetName": "pages",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "event_date",
-                      "expression": "`event_date`"
+                      "expression": "`event_date`",
+                      "name": "event_date"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 2,
-              "widgetType": "filter-date-range-picker",
-              "frame": {
-                "title": "Date (UTC)",
-                "showTitle": true
-              },
               "encodings": {
                 "fields": [
                   {
@@ -658,17 +657,23 @@
                     "queryName": "pages_event_date"
                   }
                 ]
-              }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Date (UTC)"
+              },
+              "version": 2,
+              "widgetType": "filter-date-range-picker"
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 0,
-            "width": 3,
-            "height": 2
           }
         },
         {
+          "position": {
+            "height": 2,
+            "width": 3,
+            "x": 3,
+            "y": 0
+          },
           "widget": {
             "name": "filter_wiki",
             "queries": [
@@ -676,62 +681,56 @@
                 "name": "edits_wiki",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "wiki",
-                      "expression": "`wiki`"
+                      "expression": "`wiki`",
+                      "name": "wiki"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "five_wiki",
                 "query": {
                   "datasetName": "five",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "wiki",
-                      "expression": "`wiki`"
+                      "expression": "`wiki`",
+                      "name": "wiki"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "daily_wiki",
                 "query": {
                   "datasetName": "daily",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "wiki",
-                      "expression": "`wiki`"
+                      "expression": "`wiki`",
+                      "name": "wiki"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "pages_wiki",
                 "query": {
                   "datasetName": "pages",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "wiki",
-                      "expression": "`wiki`"
+                      "expression": "`wiki`",
+                      "name": "wiki"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 2,
-              "widgetType": "filter-multi-select",
-              "frame": {
-                "title": "Wiki",
-                "showTitle": true
-              },
               "encodings": {
                 "fields": [
                   {
@@ -751,17 +750,23 @@
                     "queryName": "pages_wiki"
                   }
                 ]
-              }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Wiki"
+              },
+              "version": 2,
+              "widgetType": "filter-multi-select"
             }
-          },
-          "position": {
-            "x": 3,
-            "y": 0,
-            "width": 3,
-            "height": 2
           }
         },
         {
+          "position": {
+            "height": 2,
+            "width": 3,
+            "x": 6,
+            "y": 0
+          },
           "widget": {
             "name": "filter_language_code",
             "queries": [
@@ -769,62 +774,56 @@
                 "name": "edits_language_code",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "language_code",
-                      "expression": "`language_code`"
+                      "expression": "`language_code`",
+                      "name": "language_code"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "five_language_code",
                 "query": {
                   "datasetName": "five",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "language_code",
-                      "expression": "`language_code`"
+                      "expression": "`language_code`",
+                      "name": "language_code"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "daily_language_code",
                 "query": {
                   "datasetName": "daily",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "language_code",
-                      "expression": "`language_code`"
+                      "expression": "`language_code`",
+                      "name": "language_code"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "pages_language_code",
                 "query": {
                   "datasetName": "pages",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "language_code",
-                      "expression": "`language_code`"
+                      "expression": "`language_code`",
+                      "name": "language_code"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 2,
-              "widgetType": "filter-multi-select",
-              "frame": {
-                "title": "Language",
-                "showTitle": true
-              },
               "encodings": {
                 "fields": [
                   {
@@ -844,17 +843,23 @@
                     "queryName": "pages_language_code"
                   }
                 ]
-              }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Language"
+              },
+              "version": 2,
+              "widgetType": "filter-multi-select"
             }
-          },
-          "position": {
-            "x": 6,
-            "y": 0,
-            "width": 3,
-            "height": 2
           }
         },
         {
+          "position": {
+            "height": 2,
+            "width": 3,
+            "x": 9,
+            "y": 0
+          },
           "widget": {
             "name": "filter_project_code",
             "queries": [
@@ -862,62 +867,56 @@
                 "name": "edits_project_code",
                 "query": {
                   "datasetName": "edits",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "project_code",
-                      "expression": "`project_code`"
+                      "expression": "`project_code`",
+                      "name": "project_code"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "five_project_code",
                 "query": {
                   "datasetName": "five",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "project_code",
-                      "expression": "`project_code`"
+                      "expression": "`project_code`",
+                      "name": "project_code"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "daily_project_code",
                 "query": {
                   "datasetName": "daily",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "project_code",
-                      "expression": "`project_code`"
+                      "expression": "`project_code`",
+                      "name": "project_code"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               },
               {
                 "name": "pages_project_code",
                 "query": {
                   "datasetName": "pages",
+                  "disaggregated": false,
                   "fields": [
                     {
-                      "name": "project_code",
-                      "expression": "`project_code`"
+                      "expression": "`project_code`",
+                      "name": "project_code"
                     }
-                  ],
-                  "disaggregated": false
+                  ]
                 }
               }
             ],
             "spec": {
-              "version": 2,
-              "widgetType": "filter-multi-select",
-              "frame": {
-                "title": "Project",
-                "showTitle": true
-              },
               "encodings": {
                 "fields": [
                   {
@@ -937,19 +936,20 @@
                     "queryName": "pages_project_code"
                   }
                 ]
-              }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Project"
+              },
+              "version": 2,
+              "widgetType": "filter-multi-select"
             }
-          },
-          "position": {
-            "x": 9,
-            "y": 0,
-            "width": 3,
-            "height": 2
           }
         }
       ],
-      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
-      "layoutVersion": "GRID_V1"
+      "layoutVersion": "GRID_V1",
+      "name": "filters",
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS"
     }
   ]
 }

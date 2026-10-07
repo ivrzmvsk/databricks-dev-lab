@@ -46,3 +46,11 @@ def from_widgets(dbutils):
     values["refresh_reference"] = values["refresh_reference"].lower() == "true"
     values["drop_threshold_pct"] = float(values["drop_threshold_pct"])
     return Config(**values)
+
+
+def widget_bool(dbutils, name, default=False):
+    dbutils.widgets.text(name, str(default).lower())
+    value = dbutils.widgets.get(name).lower()
+    if value not in {'true', 'false'}:
+        raise ValueError(f'{name} must be true or false')
+    return value == 'true'

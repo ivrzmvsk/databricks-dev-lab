@@ -62,3 +62,25 @@ targets:
       pipelines:
         lab5_pipeline:
           serverless: true
+  azure_trial:
+    mode: development
+    workspace:
+      profile: azure-trial
+    variables:
+      catalog: dbr_dev_trial
+      secret_scope: lab5-eventhub
+    resources:
+      pipelines:
+        lab5_pipeline:
+          serverless: true
+  azure_trial_2:
+    mode: development
+    workspace:
+      profile: azure_trial_2
+    variables:
+      catalog: dbr_dev
+      secret_scope: lab5-eventhub
+    resources:
+      pipelines:
+        lab5_pipeline:
+          serverless: true
