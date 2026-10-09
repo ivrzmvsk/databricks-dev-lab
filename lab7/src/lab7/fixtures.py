@@ -1,4 +1,5 @@
 """Fixed Wikipedia fault injection; written only to isolated Lab 7 tables."""
+
 import json
 from datetime import datetime
 
@@ -14,6 +15,8 @@ def demo_rows():
     event["user"] = "Lab7User"
     instant = datetime(2023, 11, 14, 22, 13, 20)
     # Two accepted deliveries with the same ID: one becomes a duplicate.
-    rows += [(json.dumps(event), "lab7-fixtures", 0, 100, instant, instant),
-             (json.dumps(event), "lab7-fixtures", 0, 101, instant, instant)]
+    rows += [
+        (json.dumps(event), "lab7-fixtures", 0, 100, instant, instant),
+        (json.dumps(event), "lab7-fixtures", 0, 101, instant, instant),
+    ]
     return rows

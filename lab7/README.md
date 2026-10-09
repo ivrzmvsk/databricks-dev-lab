@@ -35,6 +35,11 @@ flowchart LR
 ```
 
 The Job `lab7-wikipedia-quality-gate` runs these four tasks in sequence. A mandatory check that fails in the last task fails the Job.
+Before its first run, execute the separate `lab7-wikipedia-setup` Job.
+Setup creates the schema and constrained fact table without reading `fact_candidate`:
+the schema is derived from empty Wikipedia transformations. Setup reruns preserve data.
+Run setup again when provisioning a new environment or installing missing constraints;
+an incompatible existing fact schema requires an explicit migration.
 
 | Task | What it does |
 |---|---|
@@ -53,8 +58,22 @@ The transformations are importable modules, shared by the pipeline, the notebook
 |---|---|
 | `lab5/src/lab5/transforms.py`, `lab6/src/lab6/transforms.py` | JSON parsing, fallback event ID, quality annotation, wiki-scoped keys, UTC buckets, byte measures, aggregates |
 | `src/lab7/quality.py` | rules, pure classification, deduplication ranking, fact and dimension builders, reference join, reconciliation, freshness |
+| `src/lab7/checks.py` | tested DQ groups and report summary, with explicit DataFrames, clock and DQX engine |
 | `src/lab7/dqx_checks.py` | DQX checks built from the same rules |
-| `src/lab7/runtime.py` | everything with side effects: snapshot, constraints, check suite |
+| `src/lab7/constraints.py` | shared fact contract, setup schema derivation and tested structured-error helpers |
+| `src/lab7/source_validation.py` | tested reconciliation of supplied Gold and pinned Silver DataFrames |
+| `src/lab7/tables.py` | small write helper reused by the notebooks |
+
+Task-specific reads and writes, and the explicit sequence of check groups, remain in notebook cells.
+The same check functions are called directly by pytest; no check function loads or writes tables.
+Common widget parameters use `notebook_config()`; each notebook keeps a short path bootstrap.
+`00_setup.py` provisions infrastructure, `01_snapshot.py` freezes and inspects data,
+and `03_gate.py` publishes fact, tests rejected writes and runs each DQ group.
+There is no `runtime.py` or notebook that delegates the whole task to `run_suite()`.
+
+Tests call the same DQ groups used by `03_gate.py`, including failures for missing deliveries,
+orphan keys, corrupt aggregates, DQX violations and late events. They also verify summary
+severity and the shared negative-write expressions.
 
 The tests (`tests/`) cover JSON parsing and malformed payloads, rejection reasons, branch accounting, deduplication, wiki-scoped keys, UTC bucket boundaries, nullable byte measures, reference joins, aggregates, freshness boundaries, constraint-error handling and the failing gate.
 Nine synthetic records (six invalid, two valid, one repeated delivery) run inside pytest and in `wiki_quarantine_demo`.
@@ -76,6 +95,7 @@ TZ=UTC LAB7_SPARK_BACKEND=connect lab7/.venv-connect/bin/python -m pytest -c lab
 cd lab7
 databricks bundle validate --strict -t personal
 databricks bundle deploy -t personal
+databricks bundle run lab7_setup_job -t personal
 databricks bundle run lab7_quality_job -t personal
 ```
 
@@ -107,7 +127,7 @@ Rejected rows go to `wiki_quarantine` with the raw JSON, Kafka coordinates, `_qu
 
 ### Delta constraints
 
-`fact_edits` is a regular Delta table published by the gate task. It has NOT NULL on the keys and `edit_count`, and CHECK constraints `one_edit`, `lengths_nonnegative` and `bytes_consistent`.
+`fact_edits` is a regular Delta table provisioned by the separate setup Job and refreshed by the gate task using INSERT OVERWRITE, which retains constraints. It has NOT NULL on the keys and `edit_count`, and CHECK constraints `one_edit`, `lengths_nonnegative` and `bytes_consistent`.
 The gate task inserts four invalid rows (NULL `event_id`, `edit_count = -1`, negative `old_length`, inconsistent `bytes_delta`). Each is rejected with the expected structured Delta error and constraint name, and the row count stays the same.
 
 ### DQX
@@ -125,7 +145,9 @@ SUM(bytes_added, bytes_removed, net_bytes_delta) of each aggregate = the same su
 ```
 
 Deliveries are also compared as a multiset on their Kafka coordinates, so equal totals cannot hide one lost and one extra row. The Lab 6 Gold validation is run against its pinned Silver version as well.
-This read-only check is in `lab7.source_validation`. Its tests cover lost rows, duplicate events, orphan keys and corrupted aggregate and byte measures.
+The source-table reads and pinned-version selection are visible in `03_gate.py`.
+The frame-level check is in `lab7.source_validation`; its tests cover lost rows,
+duplicate events, orphan keys and corrupted aggregate and byte measures.
 
 ### Gate and results table
 
@@ -154,7 +176,7 @@ The pipeline `lab7_fail_demo` sets one edit count to -1 and must fail on `one_ed
 
 ## Results
 
-Lab 5 Bronze version 26, personal workspace:
+Lab 5 Bronze version 27, personal workspace:
 
 ```text
 23,844 Bronze = 23,843 Silver + 0 Quarantine + 1 Duplicate
@@ -167,8 +189,12 @@ Lab 5 Bronze version 26, personal workspace:
 - All four invalid inserts were rejected with the expected constraint; the fact kept 23,843 rows.
 - `lab7_fail_demo` failed on `one_edit`, as intended.
 - Dimension keys are unique, all fact references resolve, and the Lab 6 Gold reconciliation passed.
+- The separate setup Job and all 63 local/headless tests passed. First table creation
+  and repeated setup were verified without requiring a pipeline-owned candidate table.
 
-Job `lab7-wikipedia-quality-gate`, all four tasks succeeded:
+The [current Job run](https://dbc-ab9a5afe-c151.cloud.databricks.com/jobs/228507581941930/runs/381144064412640?o=7474655630219513)
+succeeded on the first attempt: snapshot, all 63 tests, pipeline and gate.
+The screenshot below shows the same four-task layout from an earlier run:
 
 ![job graph](screenshots/01_job_graph.png)
 
@@ -185,10 +211,10 @@ Negative test `lab7_fail_demo`: the pipeline fails on purpose, with one unmet ex
 | Path | What it is |
 |---|---|
 | `databricks.yml` | Bundle: variables and the targets `personal` and `azure_dev` |
-| `resources/` | Quality Job, quality pipeline, negative-test pipeline |
-| `src/lab7/` | Rules, pure transformations, DQX checks, side-effecting runtime |
+| `resources/` | Separate setup Job, quality Job, quality pipeline, negative-test pipeline |
+| `src/lab7/` | Rules, pure transformations, DQX checks, tested helpers and shared contracts |
 | `pipeline/` | Lakeflow pipeline source and the negative-test pipeline |
-| `notebooks/` | One thin notebook per Job task |
+| `notebooks/` | Setup and readable task workflows split into named cells |
 | `tests/` | pytest suite |
 | `tools/` | Debugging and inspection helpers |
 | `sql/inspect_quality.sql` | Queries over the quality tables |
@@ -211,5 +237,5 @@ databricks bundle deploy -t azure_dev
 
 ## CI
 
-`.github/workflows/lab7-ci.yml` installs `requirements-ci.txt` and runs the pytest suite on local Spark for pushes, pull requests and manual runs.
+`.github/workflows/lab7-ci.yml` installs `requirements-ci.txt`, runs Ruff (including unused imports and the 100-character line limit), and runs the pytest suite on local Spark for pushes, pull requests and manual runs.
 The checks against the real tables run in the headless Job.

@@ -1,4 +1,5 @@
 """Run/debug in an IDE using lab7/.venv-connect; Spark runs in personal-env."""
+
 import sys
 from pathlib import Path
 
@@ -7,6 +8,7 @@ for source in ("lab5/src", "lab6/src", "lab7/src"):
     sys.path.insert(0, str(repo / source))
 
 from databricks.connect import DatabricksSession
+from lab7.constraints import BRONZE_SCHEMA
 from lab7.quality import classify
 from lab7.fixtures import demo_rows
 
@@ -14,7 +16,7 @@ from lab7.fixtures import demo_rows
 def main():
     spark = DatabricksSession.builder.profile("personal-env").serverless().getOrCreate()
     spark.conf.set("spark.sql.session.timeZone", "UTC")
-    schema = "event_json STRING, kafka_topic STRING, kafka_partition INT, kafka_offset BIGINT, kafka_enqueued_at TIMESTAMP, _ingested_at TIMESTAMP"
+    schema = BRONZE_SCHEMA
     source = spark.createDataFrame(demo_rows(), schema)
     # Set an IDE breakpoint here, or use python -m pdb lab7/tools/debug_connect.py.
     classified = classify(source)

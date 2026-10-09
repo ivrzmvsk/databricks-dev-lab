@@ -1,4 +1,5 @@
 """Local Spark for CI; no workspace credentials are required."""
+
 import os
 import sys
 
@@ -10,14 +11,19 @@ from pyspark.sql import SparkSession
 def dqx_engine(spark):
     """Integration-only dependency; pure transformation tests never create SDK clients."""
     from lab7.execution import build_dqx_engine
+
     backend = os.environ.get("LAB7_SPARK_BACKEND", "local")
     if backend == "local":
         from unittest.mock import MagicMock
+
         client = MagicMock()
         client.config._product_info = None
     else:
         from databricks.sdk import WorkspaceClient
-        client = WorkspaceClient(profile="personal-env") if backend == "connect" else WorkspaceClient()
+
+        client = (
+            WorkspaceClient(profile="personal-env") if backend == "connect" else WorkspaceClient()
+        )
     return build_dqx_engine(spark, client)
 
 
@@ -26,6 +32,7 @@ def spark():
     backend = os.environ.get("LAB7_SPARK_BACKEND", "local")
     if backend == "connect":
         from databricks.connect import DatabricksSession
+
         session = DatabricksSession.builder.profile("personal-env").serverless().getOrCreate()
         session.conf.set("spark.sql.session.timeZone", "UTC")
         yield session
@@ -33,6 +40,7 @@ def spark():
         return
     if backend == "runtime":
         import builtins
+
         session = builtins._lab7_spark
         session.conf.set("spark.sql.session.timeZone", "UTC")
         yield session

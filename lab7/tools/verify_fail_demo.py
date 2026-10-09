@@ -1,4 +1,5 @@
 """Run the explicit negative pipeline in personal-env and verify its failure."""
+
 import argparse
 import json
 from pathlib import Path
@@ -30,11 +31,18 @@ def main():
         raise TimeoutError("Negative test did not finish within 15 minutes")
     response = cli("pipelines", "list-pipeline-events", args.pipeline_id, "--limit", "200")
     events = response if isinstance(response, list) else response.get("events", [])
-    errors = [event for event in events if event.get("level") == "ERROR"
-              and event.get("origin", {}).get("update_id") == update_id]
-    report = {"pipeline_id": args.pipeline_id, "update_id": update_id,
-              "state": state, "errors": errors,
-              "expected_failure_verified": state == "FAILED" and "one_edit" in json.dumps(errors).lower()}
+    errors = [
+        event
+        for event in events
+        if event.get("level") == "ERROR" and event.get("origin", {}).get("update_id") == update_id
+    ]
+    report = {
+        "pipeline_id": args.pipeline_id,
+        "update_id": update_id,
+        "state": state,
+        "errors": errors,
+        "expected_failure_verified": state == "FAILED" and "one_edit" in json.dumps(errors).lower(),
+    }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n")
     if not report["expected_failure_verified"]:

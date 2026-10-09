@@ -1,4 +1,5 @@
 """Exercise the actual Lab 5/6 code with deterministic Wikipedia events."""
+
 import json
 from datetime import datetime
 
@@ -25,8 +26,12 @@ def test_quality_routing_accounts_for_every_bronze_record(spark):
     assert len(valid) + len(quarantine) == bronze.count()
     assert valid[0].event_time == datetime(2023, 11, 14, 22, 13, 20)
     expected_errors = {
-        1: "valid_title", 2: "valid_user", 3: "valid_timestamp",
-        4: "valid_lengths", 5: "valid_domain", 6: "valid_json",
+        1: "valid_title",
+        2: "valid_user",
+        3: "valid_timestamp",
+        4: "valid_lengths",
+        5: "valid_domain",
+        6: "valid_json",
     }
     for row in quarantine:
         assert expected_errors[row.kafka_offset] in row._quality_errors
@@ -34,8 +39,12 @@ def test_quality_routing_accounts_for_every_bronze_record(spark):
 
 def test_parser_fallback_id_and_malformed_payloads(spark):
     event = {
-        "id": 42, "wiki": "enwiki", "type": "edit", "title": " Page ",
-        "user": " User ", "timestamp": 1700000000,
+        "id": 42,
+        "wiki": "enwiki",
+        "type": "edit",
+        "title": " Page ",
+        "user": " User ",
+        "timestamp": 1700000000,
         "meta": {"domain": "en.wikipedia.org"},
     }
     source = spark.createDataFrame(
@@ -59,12 +68,78 @@ def edit_fixture(spark):
         "kafka_enqueued_at STRING, kafka_topic STRING, kafka_partition INT, kafka_offset LONG"
     )
     rows = [
-        ("a", "2026-10-04 15:04:59", "enwiki", "Same", "Same", 0, False, 100, 150, 1, 2, "2026-10-04 15:05:00", "events", 0, 1),
-        ("a", "2026-10-04 15:04:59", "enwiki", "Same", "Same", 0, False, 100, 999, 1, 2, "2026-10-04 15:05:01", "events", 0, 2),
-        ("b", "2026-10-04 15:05:00", "plwiki", "Same", "Same", 0, True, 150, 100, 3, 4, "2026-10-04 15:05:01", "events", 0, 3),
-        ("c", "2026-10-04 15:05:10", "plwiki", "Other", "Same", 1, False, None, 120, 4, 5, "2026-10-04 15:05:11", "events", 0, 4),
+        (
+            "a",
+            "2026-10-04 15:04:59",
+            "enwiki",
+            "Same",
+            "Same",
+            0,
+            False,
+            100,
+            150,
+            1,
+            2,
+            "2026-10-04 15:05:00",
+            "events",
+            0,
+            1,
+        ),
+        (
+            "a",
+            "2026-10-04 15:04:59",
+            "enwiki",
+            "Same",
+            "Same",
+            0,
+            False,
+            100,
+            999,
+            1,
+            2,
+            "2026-10-04 15:05:01",
+            "events",
+            0,
+            2,
+        ),
+        (
+            "b",
+            "2026-10-04 15:05:00",
+            "plwiki",
+            "Same",
+            "Same",
+            0,
+            True,
+            150,
+            100,
+            3,
+            4,
+            "2026-10-04 15:05:01",
+            "events",
+            0,
+            3,
+        ),
+        (
+            "c",
+            "2026-10-04 15:05:10",
+            "plwiki",
+            "Other",
+            "Same",
+            1,
+            False,
+            None,
+            120,
+            4,
+            5,
+            "2026-10-04 15:05:11",
+            "events",
+            0,
+            4,
+        ),
     ]
-    return spark.createDataFrame(rows, schema).withColumn("event_time", F.to_timestamp("event_time"))
+    return spark.createDataFrame(rows, schema).withColumn(
+        "event_time", F.to_timestamp("event_time")
+    )
 
 
 def test_gold_deduplication_scoped_keys_and_utc_buckets(spark):

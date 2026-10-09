@@ -9,6 +9,9 @@ from lab5.transforms import annotate_quality, parse_wiki
 from lab6.transforms import prepare_edits, aggregate_activity
 
 
+DEFAULT_MAX_AGE_SECONDS = 3600
+
+
 ROW_RULES = {
     **WIKI_RULES,
     "required_namespace": "namespace IS NOT NULL",
@@ -110,7 +113,7 @@ def reconcile_deliveries(bronze, branches, keys):
     }
 
 
-def freshness_check(latest, reference: datetime, max_age_seconds=3600):
+def freshness_check(latest, reference: datetime, max_age_seconds=DEFAULT_MAX_AGE_SECONDS):
     """Explicit reference time makes snapshot and live freshness testable."""
     if latest is None or reference is None:
         return {"passed": False, "age_seconds": None, "reason": "empty_timestamp"}
@@ -126,13 +129,13 @@ def snapshot_age_check(captured_at, reference, max_age_seconds=None):
     """Manual runs measure snapshot age; a caller-supplied SLA makes it mandatory."""
     if max_age_seconds is not None and max_age_seconds <= 0:
         raise ValueError("Snapshot age SLA must be a positive number of seconds")
-    result = freshness_check(captured_at, reference, max_age_seconds or 3600)
+    result = freshness_check(captured_at, reference, max_age_seconds or DEFAULT_MAX_AGE_SECONDS)
     result["severity"] = "warning" if max_age_seconds is None else "error"
     result["mode"] = "measure_only" if max_age_seconds is None else "enforced_sla"
     return result
 
 
-def delivery_timeliness(df, max_delay_seconds=3600):
+def delivery_timeliness(df, max_delay_seconds=DEFAULT_MAX_AGE_SECONDS):
     """Check each event against its own ingestion timestamp, including outliers."""
     delay = F.col("_ingested_at").cast("double") - F.col("event_time").cast("double")
     return df.withColumn("_delivery_delay_seconds", delay).withColumn(

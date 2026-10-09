@@ -1,4 +1,5 @@
 """Read actual named expectation metrics from the personal pipeline event log."""
+
 import argparse
 import json
 from pathlib import Path
@@ -30,24 +31,41 @@ def main():
         for row in rows:
             detail = json.loads(row.details)
             quality = detail.get("flow_progress", {}).get("data_quality") or {}
-            relevant = [m for m in quality.get("expectations") or []
-                        if m.get("dataset", "").split(".")[-1] == "wiki_accepted"]
+            relevant = [
+                m
+                for m in quality.get("expectations") or []
+                if m.get("dataset", "").split(".")[-1] == "wiki_accepted"
+            ]
             if relevant:
-                events.append({"id": row.id, "timestamp": str(row.timestamp),
-                               "data_quality": quality})
+                events.append(
+                    {"id": row.id, "timestamp": str(row.timestamp), "data_quality": quality}
+                )
             for metric in relevant:
-                target = metrics.setdefault(metric["name"], {"passed_records": 0, "failed_records": 0})
+                target = metrics.setdefault(
+                    metric["name"], {"passed_records": 0, "failed_records": 0}
+                )
                 for key in target:
                     target[key] += int(metric.get(key) or 0)
-        report = {"update_id": update_id, "dataset": "wiki_accepted",
-                  "action": "expect_all_or_drop", "expectations": metrics, "events": events}
+        report = {
+            "update_id": update_id,
+            "dataset": "wiki_accepted",
+            "action": "expect_all_or_drop",
+            "expectations": metrics,
+            "events": events,
+        }
         output = repo / "lab7/evidence/expectations.json"
         output.write_text(json.dumps(report, indent=2) + "\n")
         if set(metrics) != set(ROW_RULES):
-            raise AssertionError(f"Missing per-rule expectation metrics: {set(ROW_RULES) - set(metrics)}")
+            raise AssertionError(
+                f"Missing per-rule expectation metrics: {set(ROW_RULES) - set(metrics)}"
+            )
         if any(m["failed_records"] for m in metrics.values()):
             raise AssertionError("Unexpected failed expectations in the real clean snapshot")
-        print(json.dumps({"update_id": update_id, "named_expectations": len(metrics), "metrics": metrics}))
+        print(
+            json.dumps(
+                {"update_id": update_id, "named_expectations": len(metrics), "metrics": metrics}
+            )
+        )
     finally:
         spark.stop()
 

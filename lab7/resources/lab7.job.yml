@@ -2,6 +2,7 @@ resources:
   jobs:
     lab7_quality_job:
       name: lab7-wikipedia-quality-gate
+      description: Refresh data and run tests; schema and constraints are provisioned by the separate setup Job.
       max_concurrent_runs: 1
       timeout_seconds: 3600
       parameters:

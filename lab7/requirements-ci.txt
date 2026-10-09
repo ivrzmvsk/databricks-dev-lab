@@ -3,3 +3,4 @@ pyspark==4.0.0
 databricks-labs-dqx==0.16.0
 pandas==2.2.3
 pyarrow==19.0.1
+ruff==0.16.10

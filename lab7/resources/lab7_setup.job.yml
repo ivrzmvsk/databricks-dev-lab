@@ -1,0 +1,23 @@
+resources:
+  jobs:
+    lab7_setup_job:
+      name: lab7-wikipedia-setup
+      description: Provision the isolated schema and constrained fact table separately from data refresh.
+      max_concurrent_runs: 1
+      timeout_seconds: 900
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: bronze_schema
+          default: ${var.bronze_schema}
+        - name: gold_schema
+          default: ${var.gold_schema}
+        - name: code_root
+          default: ${workspace.file_path}
+      tasks:
+        - task_key: setup
+          max_retries: 0
+          notebook_task:
+            notebook_path: ../notebooks/00_setup.py

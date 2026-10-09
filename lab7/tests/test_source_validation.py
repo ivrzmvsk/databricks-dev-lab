@@ -22,14 +22,17 @@ def test_source_gold_reconciliation_accepts_healthy_frames(source_frames):
     assert validate_gold_frames(*source_frames) == 1
 
 
-@pytest.mark.parametrize("corruption,reason", [
-    ("duplicate_fact", "Duplicate events"),
-    ("missing_silver", "pinned Silver snapshot"),
-    ("orphan_page", "Orphan page_key"),
-    ("aggregate_count", "agg_wiki_daily count mismatch"),
-    ("aggregate_bytes", "agg_wiki_daily bytes mismatch"),
-    ("fact_bytes", "Inconsistent fact byte measures"),
-])
+@pytest.mark.parametrize(
+    "corruption,reason",
+    [
+        ("duplicate_fact", "Duplicate events"),
+        ("missing_silver", "pinned Silver snapshot"),
+        ("orphan_page", "Orphan page_key"),
+        ("aggregate_count", "agg_wiki_daily count mismatch"),
+        ("aggregate_bytes", "agg_wiki_daily bytes mismatch"),
+        ("fact_bytes", "Inconsistent fact byte measures"),
+    ],
+)
 def test_source_gold_reconciliation_rejects_corrupt_data(source_frames, corruption, reason):
     fact, silver, dimensions, aggregates = source_frames
     if corruption == "duplicate_fact":
@@ -39,9 +42,13 @@ def test_source_gold_reconciliation_rejects_corrupt_data(source_frames, corrupti
     elif corruption == "orphan_page":
         dimensions["dim_page"] = dimensions["dim_page"].limit(0)
     elif corruption == "aggregate_count":
-        aggregates["agg_wiki_daily"] = aggregates["agg_wiki_daily"].withColumn("edit_count", F.lit(2))
+        aggregates["agg_wiki_daily"] = aggregates["agg_wiki_daily"].withColumn(
+            "edit_count", F.lit(2)
+        )
     elif corruption == "aggregate_bytes":
-        aggregates["agg_wiki_daily"] = aggregates["agg_wiki_daily"].withColumn("net_bytes_delta", F.lit(11))
+        aggregates["agg_wiki_daily"] = aggregates["agg_wiki_daily"].withColumn(
+            "net_bytes_delta", F.lit(11)
+        )
     elif corruption == "fact_bytes":
         fact = fact.withColumn("bytes_added", F.lit(9))
     with pytest.raises(AssertionError, match=reason):

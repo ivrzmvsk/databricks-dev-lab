@@ -87,3 +87,14 @@ targets:
               libraries:
                 - pypi:
                     package: databricks-labs-dqx==0.16.0
+        lab7_setup_job:
+          job_clusters:
+            - job_cluster_key: classic
+              new_cluster:
+                spark_version: ${var.azure_spark_version}
+                node_type_id: ${var.azure_node_type}
+                num_workers: 1
+                data_security_mode: USER_ISOLATION
+          tasks:
+            - task_key: setup
+              job_cluster_key: classic

@@ -32,3 +32,12 @@ class Config:
         if not re.fullmatch(r"[a-z][a-z0-9_]*", name):
             raise ValueError("Unsafe source identifier")
         return f"{self.catalog}.{schema}.{name}"
+
+
+def notebook_config(widgets):
+    """Register common parameters and validate their values without an SDK client."""
+    defaults = Config()
+    names = ("catalog", "schema", "bronze_schema", "gold_schema")
+    for name in names:
+        widgets.text(name, getattr(defaults, name))
+    return Config(**{name: widgets.get(name) for name in names})

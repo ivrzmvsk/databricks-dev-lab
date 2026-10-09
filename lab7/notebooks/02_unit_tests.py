@@ -19,7 +19,20 @@ builtins._lab7_spark = spark
 sys.dont_write_bytecode = True
 output = io.StringIO()
 with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
-    exit_code = pytest.main([str(root / "lab7/tests"), "-c", str(root / "lab7/pytest.ini"), "-q", "-p", "no:cacheprovider"])
+    exit_code = pytest.main(
+        [
+            str(root / "lab7/tests"),
+            "-c",
+            str(root / "lab7/pytest.ini"),
+            "-q",
+            "-p",
+            "no:cacheprovider",
+        ]
+    )
 if exit_code:
     raise AssertionError(f"pytest failed with exit code {exit_code}: {output.getvalue()[-12000:]}")
-dbutils.notebook.exit(json.dumps({"pytest_exit_code": int(exit_code), "backend": "runtime", "output": output.getvalue()}))
+dbutils.notebook.exit(
+    json.dumps(
+        {"pytest_exit_code": int(exit_code), "backend": "runtime", "output": output.getvalue()}
+    )
+)

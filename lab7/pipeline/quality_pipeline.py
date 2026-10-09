@@ -1,4 +1,5 @@
 """Wikipedia-only batch pipeline over a frozen Lab 5 Bronze snapshot."""
+
 import sys
 from pyspark import pipelines as dp
 from pyspark.sql import functions as F
@@ -6,7 +7,16 @@ from pyspark.sql import functions as F
 root = spark.conf.get("lab7.code_root")
 for path in ("lab7/src", "lab5/src", "lab6/src"):
     sys.path.insert(0, f"{root}/{path}")
-from lab7.quality import ROW_RULES, FACT_RULES, classify, rank_deliveries, make_fact, make_dimensions, make_aggregates, enrich_wikis
+from lab7.quality import (
+    ROW_RULES,
+    FACT_RULES,
+    classify,
+    rank_deliveries,
+    make_fact,
+    make_dimensions,
+    make_aggregates,
+    enrich_wikis,
+)
 
 
 @dp.materialized_view(name="wiki_bronze")
@@ -42,7 +52,11 @@ def silver():
 
 @dp.materialized_view(name="wiki_duplicates")
 def duplicates():
-    return spark.read.table("wiki_ranked").filter("_delivery > 1").withColumn("_duplicate_reason", F.lit("repeated_event_id"))
+    return (
+        spark.read.table("wiki_ranked")
+        .filter("_delivery > 1")
+        .withColumn("_duplicate_reason", F.lit("repeated_event_id"))
+    )
 
 
 @dp.materialized_view(name="fact_candidate")
