@@ -1,0 +1,50 @@
+resources:
+  jobs:
+    lab7_quality_job:
+      name: lab7-wikipedia-quality-gate
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: bronze_schema
+          default: ${var.bronze_schema}
+        - name: gold_schema
+          default: ${var.gold_schema}
+        - name: code_root
+          default: ${workspace.file_path}
+      environments:
+        - environment_key: tests
+          spec:
+            client: '4'
+            dependencies:
+              - pytest==8.3.5
+              - databricks-labs-dqx==0.16.0
+      tasks:
+        - task_key: snapshot
+          max_retries: 0
+          notebook_task:
+            notebook_path: ../notebooks/01_snapshot.py
+        - task_key: unit_tests
+          depends_on:
+            - task_key: snapshot
+          max_retries: 0
+          notebook_task:
+            notebook_path: ../notebooks/02_unit_tests.py
+        - task_key: quality_pipeline
+          max_retries: 0
+          depends_on:
+            - task_key: unit_tests
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.lab7_quality_pipeline.id}
+        - task_key: constraints_and_gate
+          max_retries: 0
+          depends_on:
+            - task_key: quality_pipeline
+            - task_key: unit_tests
+          notebook_task:
+            notebook_path: ../notebooks/03_gate.py
+            base_parameters:
+              snapshot_max_age_seconds: '3600'

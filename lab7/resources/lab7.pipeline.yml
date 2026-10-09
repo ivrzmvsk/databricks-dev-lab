@@ -1,0 +1,21 @@
+resources:
+  pipelines:
+    lab7_quality_pipeline:
+      name: lab7-wikipedia-quality-${bundle.target}
+      catalog: ${var.catalog}
+      schema: ${var.schema}
+      serverless: true
+      continuous: false
+      development: true
+      edition: ADVANCED
+      channel: CURRENT
+      libraries:
+        - file:
+            path: ../pipeline/quality_pipeline.py
+      configuration:
+        lab7.code_root: ${workspace.file_path}
+        lab7.input_table: ${var.catalog}.${var.schema}.bronze_snapshot
+        lab7.reference_table: ${var.catalog}.${var.gold_schema}.ref_sitematrix_raw
+        pipelines.numUpdateRetryAttempts: '0'
+        pipelines.maxFlowRetryAttempts: '0'
+        spark.sql.session.timeZone: UTC

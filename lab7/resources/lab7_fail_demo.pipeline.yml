@@ -1,0 +1,18 @@
+resources:
+  pipelines:
+    lab7_fail_demo:
+      name: lab7-wikipedia-expected-failure-${bundle.target}
+      catalog: ${var.catalog}
+      schema: ${var.schema}
+      serverless: true
+      continuous: false
+      development: true
+      edition: ADVANCED
+      channel: CURRENT
+      libraries:
+        - file:
+            path: ../pipeline/fail_demo.py
+      configuration:
+        lab7.fact_table: ${var.catalog}.${var.schema}.fact_edits
+        pipelines.numUpdateRetryAttempts: '0'
+        pipelines.maxFlowRetryAttempts: '0'

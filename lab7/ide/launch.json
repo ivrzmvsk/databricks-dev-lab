@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Lab 7: debug Wikipedia with Connect (personal-env)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/lab7/tools/debug_connect.py",
+      "python": "${workspaceFolder}/lab7/.venv-connect/bin/python",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {"TZ": "UTC"},
+      "justMyCode": true
+    },
+    {
+      "name": "Lab 7: pytest with Connect (personal-env)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-c", "lab7/pytest.ini", "lab7/tests", "-q"],
+      "python": "${workspaceFolder}/lab7/.venv-connect/bin/python",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {"TZ": "UTC", "LAB7_SPARK_BACKEND": "connect"},
+      "justMyCode": true
+    }
+  ]
+}

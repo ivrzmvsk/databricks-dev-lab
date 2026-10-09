@@ -1,0 +1,8 @@
+.venv-connect/
+
+# Working notes and run outputs; the README is the only document
+AGENTS.md
+QUALITY_CONTRACT.md
+VALIDATION.md
+REVIEW_FIXES.md
+evidence/
