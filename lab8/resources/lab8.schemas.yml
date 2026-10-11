@@ -1,0 +1,10 @@
+resources:
+  schemas:
+    silver_schema:
+      name: ${var.silver_schema}
+      catalog_name: ${var.catalog}
+      comment: Lab 8 Wikipedia pipeline-owned Bronze/Silver/quarantine
+    gold_schema:
+      name: ${var.gold_schema}
+      catalog_name: ${var.catalog}
+      comment: Lab 8 Wikimedia analytics and release audit

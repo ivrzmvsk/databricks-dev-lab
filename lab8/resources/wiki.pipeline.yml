@@ -1,0 +1,28 @@
+resources:
+  pipelines:
+    wiki_pipeline:
+      name: lab8-wikipedia-${bundle.target}
+      catalog: ${var.catalog}
+      schema: ${resources.schemas.silver_schema.name}
+      edition: ADVANCED
+      channel: CURRENT
+      continuous: false
+      serverless: true
+      permissions: ${var.manage_permissions}
+      libraries:
+      - file:
+          path: ../pipeline/wiki_bronze.py
+      - file:
+          path: ../pipeline/wiki_silver.py
+      - file:
+          path: ../pipeline/wiki_quarantine.py
+      configuration:
+        lab8.lab5_code_path: ${workspace.file_path}/lab5/src
+        lab8.lab8_code_path: ${workspace.file_path}/lab8/src
+        lab8.eventhub_namespace: ${var.eventhub_namespace}
+        lab8.eventhub_name: ${var.eventhub_name}
+        lab8.secret_scope: ${var.secret_scope}
+        lab8.secret_key: ${var.secret_key}
+        lab8.max_offsets_per_trigger: ${var.max_offsets_per_trigger}
+        lab8.consumer_group_prefix: ivanrazumovskyi-lab8-${bundle.target}
+        spark.sql.session.timeZone: UTC

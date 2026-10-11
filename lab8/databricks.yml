@@ -1,0 +1,75 @@
+bundle:
+  name: lab8_wikipedia_promotion
+  databricks_cli_version: '>= 1.10.0, <= 1.10.0'
+  engine: direct
+include:
+- resources/*.yml
+variables:
+  prod_workspace_root:
+    default: /Workspace/Users/ivanrazumovskyi@softserve.academy/.bundle/${bundle.name}/prod
+    description: Stable restricted deployment root; grant the CI deployer CAN_MANAGE on this folder
+  catalog:
+    default: workspace
+  silver_schema:
+    default: ivanrazumovskyi_lab8_silver
+  gold_schema:
+    default: ivanrazumovskyi_lab8_gold
+  warehouse_id:
+    description: Existing warehouse in the selected workspace
+  eventhub_namespace:
+    default: evhpl24databricks02
+  eventhub_name:
+    default: ivanrazumovskyi_evh
+  secret_scope:
+    default: lab5-eventhub
+  secret_key:
+    default: eventhub-connection-string
+  max_offsets_per_trigger:
+    default: '10000'
+  reader_principal:
+    default: ${workspace.current_user.userName}
+  run_as:
+    type: complex
+    default:
+      user_name: ${workspace.current_user.userName}
+    description: Job identity; use service_principal_name for an Azure service principal
+  manage_permissions:
+    type: complex
+    default:
+    - user_name: ${workspace.current_user.userName}
+      level: CAN_MANAGE
+workspace:
+  root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+sync:
+  paths:
+  - .
+  - ../lab5/src
+  - ../lab6/src
+targets:
+  dev:
+    mode: development
+    workspace:
+      profile: personal-env
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+    presets:
+      name_prefix: ''
+      trigger_pause_status: PAUSED
+    variables:
+      warehouse_id: 6fec7d20a958edd1
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-7405618361895520.0.azuredatabricks.net
+      root_path: ${var.prod_workspace_root}
+    run_as: ${var.run_as}
+    presets:
+      trigger_pause_status: PAUSED
+    variables:
+      catalog: dbr_dev
+      secret_scope: lab5-eventhub
+      warehouse_id: d8b8ff9942968cb8
+    resources:
+      pipelines:
+        wiki_pipeline:
+          serverless: true
+          development: false

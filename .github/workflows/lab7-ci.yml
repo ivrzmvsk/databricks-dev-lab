@@ -29,5 +29,7 @@ jobs:
           java-version: '17'
       - name: Install test dependencies
         run: python -m pip install -r lab7/requirements-ci.txt
+      - name: Lint Lab 7 Python
+        run: python -m ruff check lab7
       - name: Run Wikipedia unit and fixture quality tests
         run: python -m pytest -c lab7/pytest.ini lab7/tests

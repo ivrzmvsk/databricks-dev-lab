@@ -1,0 +1,124 @@
+name: Lab 8 CI and promotion
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lab8/**'
+      - 'lab5/src/**'
+      - 'lab6/src/**'
+      - '.github/workflows/lab8-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lab8/**'
+      - 'lab5/src/**'
+      - 'lab6/src/**'
+      - '.github/workflows/lab8-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Wikipedia tests and static configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TZ: UTC
+      SPARK_LOCAL_IP: 127.0.0.1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: lab8/requirements-ci.txt
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: python -m pip install -r lab8/requirements-ci.txt
+      - uses: databricks/setup-cli@main
+        with:
+          version: '1.10.0'
+      - run: python lab8/tools/check_bundle.py
+      - run: python -m pytest -c lab8/pytest.ini lab8/tests --junitxml=lab8-tests.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lab8-tests
+          path: lab8-tests.xml
+
+  validate-dev:
+    name: Validate bundle in personal DEV
+    needs: tests
+    # Credentials are used only for trusted code. Fork PRs still run local tests.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABRICKS_AUTH_TYPE: pat
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
+        with:
+          version: '1.10.0'
+      - name: Configure personal DEV profile (host only)
+        run: python lab8/tools/configure_dev_ci.py
+      - name: Validate DEV bundle
+        working-directory: lab8
+        run: databricks bundle validate --strict -t dev --profile personal-env
+
+  deploy-prod:
+    name: Deploy and verify PROD job
+    needs: [tests, validate-dev]
+    # A merge to main deploys PROD after the checks pass.
+    # No Azure credentials are consumed by PR jobs.
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    environment: lab8-prod
+    concurrency:
+      group: lab8-prod-deployment
+      cancel-in-progress: false
+    env:
+      DATABRICKS_AUTH_TYPE: pat
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_PROD_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_PROD_TOKEN }}
+    defaults:
+      run:
+        working-directory: lab8
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
+        with:
+          version: '1.10.0'
+      - name: Install bundle configuration reader
+        run: python -m pip install PyYAML==6.0.3
+      - name: Verify owner-supplied PROD settings
+        run: python tools/verify_prod_settings.py
+      - run: databricks bundle validate --strict -t prod
+      - run: databricks bundle deploy -t prod --auto-approve
+      - name: Save deployment inventory
+        run: databricks bundle summary -t prod --output json > prod-summary.json
+      # Blocking: bundle run waits for terminal success and exits nonzero on failure.
+      # No --no-wait, schedule, continuous mode or full refresh.
+      - name: Run the deployed Wikipedia job and wait for its release gate
+        env:
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: databricks bundle run promotion_job -t prod --params "release_commit=$RELEASE_COMMIT" 2>&1 | tee prod-run.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lab8-prod-deployment
+          path: |
+            lab8/prod-summary.json
+            lab8/prod-run.log
