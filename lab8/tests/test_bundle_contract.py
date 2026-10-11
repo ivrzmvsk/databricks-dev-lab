@@ -43,13 +43,14 @@ def test_promotion_cannot_run_on_pull_requests():
     prod = workflow['jobs']['deploy-prod']
     assert "github.event_name == 'push'" in prod['if']
     assert "github.ref == 'refs/heads/main'" in prod['if']
-    assert "vars.LAB8_ENABLE_PROD_DEPLOY == 'true'" in prod['if']
+    assert 'vars.' not in str(prod)
+    assert prod['env']['DATABRICKS_AUTH_TYPE'] == 'pat'
     assert prod['concurrency']['cancel-in-progress'] is False
     commands = '\n'.join(step.get('run', '') for step in prod['steps'])
     assert 'bundle deploy -t prod' in commands
     assert 'bundle run promotion_job -t prod' in commands
     assert '--no-wait' not in commands
-    assert "bundle['targets']['prod']['workspace']['host']" in commands
+    assert 'python tools/verify_prod_settings.py' in commands
     for name, job in workflow['jobs'].items():
         if name != 'deploy-prod':
             assert 'DATABRICKS_PROD_' not in str(job)

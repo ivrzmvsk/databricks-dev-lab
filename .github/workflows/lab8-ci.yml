@@ -69,19 +69,7 @@ jobs:
         with:
           version: '1.10.0'
       - name: Configure personal DEV profile (host only)
-        run: |
-          python - <<'PY'
-          import os
-          from pathlib import Path
-          if not os.environ.get('DATABRICKS_TOKEN'):
-              raise SystemExit('Configure DATABRICKS_DEV_TOKEN in GitHub Secrets')
-          config = Path(os.environ['RUNNER_TEMP']) / 'lab8-databrickscfg'
-          config.write_text(
-              '[personal-env]\nhost = https://dbc-ab9a5afe-c151.cloud.databricks.com\n'
-          )
-          with open(os.environ['GITHUB_ENV'], 'a') as environment:
-              environment.write(f'DATABRICKS_CONFIG_FILE={config}\n')
-          PY
+        run: python lab8/tools/configure_dev_ci.py
       - name: Validate DEV bundle
         working-directory: lab8
         run: databricks bundle validate --strict -t dev --profile personal-env
@@ -89,12 +77,11 @@ jobs:
   deploy-prod:
     name: Deploy and verify PROD job
     needs: [tests, validate-dev]
-    # The owner alone enables this variable after reviewing and configuring PROD.
-    # Default: skipped. No Azure credentials are consumed by PR jobs.
+    # A merge to main deploys PROD after the checks pass.
+    # No Azure credentials are consumed by PR jobs.
     if: >-
       github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      vars.LAB8_ENABLE_PROD_DEPLOY == 'true'
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     environment: lab8-prod
@@ -102,15 +89,9 @@ jobs:
       group: lab8-prod-deployment
       cancel-in-progress: false
     env:
-      DATABRICKS_AUTH_TYPE: ${{ vars.LAB8_PROD_AUTH_TYPE || 'oauth-m2m' }}
+      DATABRICKS_AUTH_TYPE: pat
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_PROD_HOST }}
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_PROD_TOKEN }}
-      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_PROD_CLIENT_ID }}
-      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_PROD_CLIENT_SECRET }}
-      BUNDLE_VAR_run_as: ${{ vars.LAB8_PROD_RUN_AS }}
-      BUNDLE_VAR_manage_permissions: ${{ vars.LAB8_PROD_MANAGE_PERMISSIONS }}
-      BUNDLE_VAR_reader_principal: ${{ vars.LAB8_PROD_READER }}
-      BUNDLE_VAR_warehouse_id: ${{ vars.LAB8_PROD_WAREHOUSE_ID }}
     defaults:
       run:
         working-directory: lab8
@@ -123,35 +104,7 @@ jobs:
       - name: Install bundle configuration reader
         run: python -m pip install PyYAML==6.0.3
       - name: Verify owner-supplied PROD settings
-        run: |
-          python - <<'PY'
-          import os
-          import json
-          from pathlib import Path
-          import yaml
-          required = ['DATABRICKS_HOST', 'BUNDLE_VAR_run_as',
-                      'BUNDLE_VAR_manage_permissions', 'BUNDLE_VAR_reader_principal', 'BUNDLE_VAR_warehouse_id']
-          auth = os.environ['DATABRICKS_AUTH_TYPE']
-          if auth == 'oauth-m2m':
-              required += ['DATABRICKS_CLIENT_ID', 'DATABRICKS_CLIENT_SECRET']
-          elif auth == 'pat':
-              required += ['DATABRICKS_TOKEN']
-          else:
-              raise SystemExit('Use oauth-m2m (recommended) or pat')
-          missing = [key for key in required if not os.environ.get(key)]
-          if missing:
-              raise SystemExit('Missing GitHub settings: ' + ', '.join(missing))
-          bundle = yaml.safe_load(Path('databricks.yml').read_text())
-          expected = bundle['targets']['prod']['workspace']['host'].rstrip('/')
-          if os.environ['DATABRICKS_HOST'].rstrip('/') != expected:
-              raise SystemExit('PROD host does not match the intended Azure workspace')
-          run_as = json.loads(os.environ['BUNDLE_VAR_run_as'])
-          if auth == 'oauth-m2m' and run_as != {'service_principal_name': os.environ['DATABRICKS_CLIENT_ID']}:
-              raise SystemExit('Deploy and run as the same service principal for this bundle')
-          acl = json.loads(os.environ['BUNDLE_VAR_manage_permissions'])
-          if not isinstance(acl, list) or not acl:
-              raise SystemExit('PROD manage permissions must be a nonempty JSON list')
-          PY
+        run: python tools/verify_prod_settings.py
       - run: databricks bundle validate --strict -t prod
       - run: databricks bundle deploy -t prod --auto-approve
       - name: Save deployment inventory

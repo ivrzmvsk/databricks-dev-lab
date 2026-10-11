@@ -13,7 +13,7 @@ merge to main -> bundle validate (prod) -> bundle deploy (prod) -> run promotion
 - **One bundle** `lab8_wikipedia_promotion` with the targets `dev` and `prod`. It reuses the Lab 5 parsing and expectations and the Lab 6 transformations (`lab5/src`, `lab6/src`) and writes only to its own two schemas.
 - **Everything as code:** two Unity Catalog schemas, a Lakeflow pipeline, one eight-task Job, SQL migrations, a metadata Volume, row filters, a column mask and grants, an AI/BI dashboard with its four queries, and the Job and pipeline permissions.
 - **A release gate** in the last task: Kafka delivery uniqueness, Bronze = Silver + quarantine, volume check, and a record of commit, run ID, Silver version, build fingerprint and fact checksum in `ops_releases`.
-- **A CI/CD workflow** with a protected PROD deployment: one release at a time, a GitHub Environment, and an explicit on/off switch.
+- **A CI/CD workflow** with a PROD deployment after checks pass on `main`: one release at a time and a GitHub Environment.
 
 ## Job
 
@@ -40,8 +40,8 @@ There is no schedule. A failing check fails the task and the GitHub job. There i
 | `validate-dev` | PR (same repository), push | `bundle validate --strict -t dev` in the personal workspace |
 | `deploy-prod` | push to `main` only, after `tests` and `validate-dev` | checks the PROD settings, `validate`, `deploy`, saves the inventory, runs `promotion_job` and waits for it |
 
-- PROD credentials are available only to `deploy-prod` (GitHub Environment `lab8-prod`). Pull requests never receive them.
-- `deploy-prod` is skipped until the repository variable `LAB8_ENABLE_PROD_DEPLOY` is `true`.
+- Only `deploy-prod` references PROD credentials (GitHub Environment `lab8-prod`); PR jobs do not consume them.
+- Authentication uses PAT. No repository or environment variables are required.
 - Releases are serialized (`concurrency`, no cancellation), and the Job allows one concurrent run.
 - The PROD host is defined once, in `databricks.yml`; the workflow fails if the `DATABRICKS_PROD_HOST` secret differs from it.
 - `prod-summary.json` and `prod-run.log` are uploaded as artifacts, also when the run fails.
@@ -111,18 +111,21 @@ The first deploy selects only the Job and the resources it depends on, so the da
 
 ## GitHub setup
 
-Create the Environment `lab8-prod` (deployment branch: `main`; no required reviewers if every merge must release without a manual step) and add:
+Add these three repository secrets. PROD secrets may alternatively be stored in
+the `lab8-prod` Environment used by the deployment job. If that Environment has
+deployment restrictions, allow `main`; leave required reviewers unset for fully
+automatic promotion after merge.
 
 | Where | Name | Value |
 |---|---|---|
 | Repository secret | `DATABRICKS_DEV_TOKEN` | access token for the personal workspace |
-| Environment secret | `DATABRICKS_PROD_HOST` | the PROD host from `databricks.yml` |
-| Environment secret | `DATABRICKS_PROD_CLIENT_ID`, `DATABRICKS_PROD_CLIENT_SECRET` | service principal (`oauth-m2m`, default); or `DATABRICKS_PROD_TOKEN` with `LAB8_PROD_AUTH_TYPE=pat` |
-| Variable | `LAB8_PROD_RUN_AS` | `{"service_principal_name":"<client-id>"}` or `{"user_name":"<email>"}` |
-| Variable | `LAB8_PROD_MANAGE_PERMISSIONS` | `[{"service_principal_name":"<client-id>","level":"CAN_MANAGE"}]` (or `user_name`) |
-| Variable | `LAB8_PROD_READER` | account user who gets analytical read access |
-| Variable | `LAB8_PROD_WAREHOUSE_ID` | SQL warehouse ID in the PROD workspace |
-| Repository variable | `LAB8_ENABLE_PROD_DEPLOY` | `true` to switch promotion on (set last) |
+| Repository secret | `DATABRICKS_PROD_HOST` | the PROD host from `databricks.yml` |
+| Repository secret | `DATABRICKS_PROD_TOKEN` | access token for the already-tested PROD owner |
+
+The workflow uses the Bundle defaults for run identity, management permissions,
+reader (the authenticated PAT owner), and PROD warehouse (`d8b8ff9942968cb8`).
+No OAuth client credentials or `LAB8_*` variables are needed. A qualifying push
+to `main` automatically deploys and runs PROD after both prerequisite jobs pass.
 
 The same identity deploys and runs the bundle. It needs `USE CATALOG` and `CREATE SCHEMA` on `dbr_dev`, access to the deployment folder, permission to create Jobs and pipelines, `CAN_USE` on the warehouse, and `READ` on the secret `lab5-eventhub / eventhub-connection-string` (Event Hub Listen access, broker reachable on TCP 9093). Tokens and secrets are never committed; `.env.*` files are ignored by Git.
 
