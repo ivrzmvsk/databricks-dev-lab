@@ -45,6 +45,7 @@ def test_promotion_cannot_run_on_pull_requests():
     assert "github.ref == 'refs/heads/main'" in prod['if']
     assert 'vars.' not in str(prod)
     assert prod['env']['DATABRICKS_AUTH_TYPE'] == 'pat'
+    assert prod['environment'] == 'lab8-prod'
     assert prod['concurrency']['cancel-in-progress'] is False
     commands = '\n'.join(step.get('run', '') for step in prod['steps'])
     assert 'bundle deploy -t prod' in commands
@@ -54,3 +55,5 @@ def test_promotion_cannot_run_on_pull_requests():
     for name, job in workflow['jobs'].items():
         if name != 'deploy-prod':
             assert 'DATABRICKS_PROD_' not in str(job)
+            assert 'secrets.DATABRICKS_HOST' not in str(job)
+            assert 'secrets.DATABRICKS_TOKEN' not in str(job)

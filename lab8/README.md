@@ -1,90 +1,172 @@
 # Lab 8 - CI/CD: DEV to PROD promotion
 
-The Wikipedia work from Labs 5-7 as one Databricks Asset Bundle with two targets, `dev` (personal Free Edition) and `prod` (Azure workspace), and a GitHub Actions pipeline that tests every pull request and deploys and runs the bundle on merge to `main`.
-Only Wikipedia is used. Netflix is not part of this lab. The Wikipedia producer runs outside the project (it sends events to the existing Event Hub) and is never started or configured here.
+The Wikipedia pipeline and Gold analytics from Labs 5 and 6, packaged as one Databricks Asset Bundle with two environments and a GitHub Actions workflow.
+Pull requests run tests and validate DEV. A merge to `main` deploys PROD, runs the promotion Job and waits for its result.
 
-```text
-PR to main    -> tests + offline bundle checks + bundle validate (dev)
-merge to main -> bundle validate (prod) -> bundle deploy (prod) -> run promotion_job -> wait for success
+Lab 5 parsing and quality rules and Lab 6 transformations are reused from their shared modules. Lab 8 creates its own schemas and resources. The Wikipedia producer runs on an external machine and sends events to the existing Event Hub.
+
+## Flow
+
+```mermaid
+flowchart TD
+    PR[Pull request to main] --> T[Local Spark tests + offline bundle checks]
+    T --> V[Bundle validate: personal DEV]
+    V --> M[Merge to main]
+    M --> C[Tests + DEV validation on merged commit]
+    C --> P[Bundle validate + deploy: Azure PROD]
+    P --> J[Run promotion_job and wait for its release gate]
 ```
+
+The merge is performed by the author or reviewer; CI validates the merged commit again before deploying.
+PROD runs only on a qualifying push to `main`. PRs and manual workflow runs perform checks without deploying.
 
 ## What was built
 
-- **One bundle** `lab8_wikipedia_promotion` with the targets `dev` and `prod`. It reuses the Lab 5 parsing and expectations and the Lab 6 transformations (`lab5/src`, `lab6/src`) and writes only to its own two schemas.
-- **Everything as code:** two Unity Catalog schemas, a Lakeflow pipeline, one eight-task Job, SQL migrations, a metadata Volume, row filters, a column mask and grants, an AI/BI dashboard with its four queries, and the Job and pipeline permissions.
-- **A release gate** in the last task: Kafka delivery uniqueness, Bronze = Silver + quarantine, volume check, and a record of commit, run ID, Silver version, build fingerprint and fact checksum in `ops_releases`.
-- **A CI/CD workflow** with a PROD deployment after checks pass on `main`: one release at a time and a GitHub Environment.
+- **One bundle** `lab8_wikipedia_promotion`, with `dev` in the personal workspace and `prod` in Azure trial 2. Both use serverless compute.
+- **One Lakeflow pipeline:** Event Hub -> Wikipedia Bronze -> Silver and quarantine, with named expectations and preserved Kafka coordinates.
+- **One eight-task Job:** setup, ingestion, Gold analytics, governance, validation and release checks.
+- **Everything as code:** schemas, pipeline, Job, SQL migrations, metadata Volume, dashboard and its four queries, row filters, column mask and permissions.
+
+The Gold model and dashboard follow Lab 6: one edit fact, five dimensions and three aggregates. The dashboard uses the viewer's own data permissions (`embed_credentials: false`). The Lab 6 alert and demo Jobs are outside this bundle. Azure infrastructure is pre-existing; Terraform is not included.
 
 ## Job
 
-The Job `lab8-wikipedia-promotion-<target>` runs these tasks in sequence:
+The Job `lab8-wikipedia-promotion-<target>` runs eight tasks in sequence:
+
+```text
+setup -> ingestion -> reference -> gold -> governance -> validation -> volume -> release_gate
+```
 
 | Task | What it does |
 |---|---|
-| `setup` | applies new SQL migrations, creates the metadata Volume, loads the reference snapshot and the access mapping |
-| `ingestion` | triggered Lakeflow pipeline: Event Hub -> Bronze -> Silver and quarantine (no full refresh) |
-| `reference`, `gold` | five dimensions, the edit fact and three aggregates from one pinned Silver version |
-| `governance` | default-deny row filters, editor-name mask, `SELECT` on the analytical tables only |
-| `validation` | unique keys, foreign keys, reconciliation, aggregate totals, attached policies |
-| `volume`, `release_gate` | volume baseline and delivery checks, then the release record |
+| `setup` | checks the migration ledger, applies new DDL, creates the metadata Volume, loads the reference snapshot and access mapping |
+| `ingestion` | runs the triggered Wikipedia pipeline, without full refresh |
+| `reference` | loads Wikimedia metadata and checks whether this is an initial build |
+| `gold` | pins one Silver Delta version, deduplicates events, builds the fact, five dimensions and three aggregates |
+| `governance` | creates policy functions, attaches row filters and the editor-name mask, grants analytical access |
+| `validation` | checks unique keys, foreign keys, reconciliation, aggregate totals and attached policies |
+| `volume` | records the current Gold volume against the last healthy baseline |
+| `release_gate` | checks delivery completeness and repeatability, then records the successful release |
 
-There is no schedule. A failing check fails the task and the GitHub job. There is no automatic rollback, and the Gold writes are not one transaction.
+The Job has no schedule and allows one concurrent run. Empty Silver, missing policies or a failed mandatory check stop the release.
+GitHub waits for the Job and fails if it fails. Gold table writes are separate operations; a failed release does not automatically roll them back.
 
-## CI/CD
+## Release checks
 
-`.github/workflows/lab8-ci.yml`:
+```text
+Bronze = Silver + Quarantine
+Bronze count = distinct Kafka delivery count
+Gold fact = distinct event IDs in the pinned Silver version
+SUM(edit_count) of each aggregate = COUNT(fact)
+```
 
-| Job | Runs on | What it does |
-|---|---|---|
-| `tests` | PR, push to `main`, manual | offline bundle checks (`tools/check_bundle.py`) and pytest on local Spark |
-| `validate-dev` | PR (same repository), push | `bundle validate --strict -t dev` in the personal workspace |
-| `deploy-prod` | push to `main` only, after `tests` and `validate-dev` | checks the PROD settings, `validate`, `deploy`, saves the inventory, runs `promotion_job` and waits for it |
+Replayed events at different Kafka offsets remain distinct deliveries in Bronze and Silver and become one fact row per `event_id` in Gold.
+Validation also checks dimension keys, fact references, byte arithmetic, aggregate byte totals and attached security policies. The gate rejects a Gold volume drop below the configured healthy baseline.
 
-- Only `deploy-prod` references PROD credentials (GitHub Environment `lab8-prod`); PR jobs do not consume them.
-- Authentication uses PAT. No repository or environment variables are required.
-- Releases are serialized (`concurrency`, no cancellation), and the Job allows one concurrent run.
-- The PROD host is defined once, in `databricks.yml`; the workflow fails if the `DATABRICKS_PROD_HOST` secret differs from it.
-- `prod-summary.json` and `prod-run.log` are uploaded as artifacts, also when the run fails.
-- To make merges the only way to PROD, protect `main`: require PR review and the `tests` and `validate-dev` checks.
-
-## Targets
-
-| Target | Workspace / compute | Catalog | Schemas |
-|---|---|---|---|
-| `dev` | Free Edition (profile `personal-env`), serverless | `workspace` | `dev_ivanrazumovskyi_ivanrazumovskyi_lab8_silver`, `..._gold` |
-| `prod` | Azure workspace (profile `azure_trial_2`), serverless, `mode: production` | `dbr_dev` | `ivanrazumovskyi_lab8_silver`, `ivanrazumovskyi_lab8_gold` |
-
-The CLI adds the `dev_<user>_` prefix to DEV schema resources, so the DEV schema names look doubled. Notebook parameters, the Volume path and the dashboard use the resolved names. Lab 5 and Lab 6 schemas and deployed resources are only read. Bronze, Silver and quarantine live in the Silver schema; Gold, security, reference and operational tables live in the Gold schema. The `_lab5` suffix on the Wikipedia tables is kept to match the Lab 6 source contract.
-
-## What is managed as code
-
-| Asset | Source |
+| Table | Content |
 |---|---|
-| Two schemas | `resources/lab8.schemas.yml` |
-| Pipeline, Job and their permissions | `resources/`, target overrides in `databricks.yml` |
-| Bronze, Silver, quarantine | `pipeline/` |
-| Gold tables | `notebooks/gold.py`, `lab6/src` |
-| Operational and security tables | `sql/migrations/*.sql` (append-only, checksummed) |
-| Volume and reference metadata | `notebooks/setup.py`, `assets/wikimedia.json` |
-| Row filters, column mask, grants | `notebooks/governance.py`, `assets/access_policy.json` |
-| Dashboard and its four queries | `dashboards/`, `sql/dashboard/` |
+| `ops_schema_migrations` | applied migration names, SHA-256 checksums and timestamps |
+| `ops_volume_log` | source and fact counts, healthy baseline and alert flag per run |
+| `ops_releases` | run ID, deployed commit, pinned Silver version, layer counts, fact checksum and successful status |
+| `ops_release_builds` | Gold build fingerprint linked to the release by run ID |
 
-The dashboard uses the viewer's own data permissions (`embed_credentials: false`). The Lab 6 alert and the destructive demo Jobs are not promoted. The workspace, catalog, warehouse, Event Hub and secret scope are prerequisites and are not created by the bundle. Terraform is not used.
+For the same Silver version and build fingerprint, the gate compares the fact count and an order-independent sum of `xxhash64` values. The fingerprint covers the Gold transformation module, shared Lab 6 and Lab 8 Python code, reference snapshot and access policy. Changed code starts a new comparison baseline. The checksum is a probabilistic check, not proof of equality.
 
 ## Repeatable deployments
 
-- The bundle name, target and workspace root are stable, so resource IDs and deployment state are kept. PROD uses a fixed `prod_workspace_root`; a CI service principal needs `CAN_MANAGE` on that folder, and the root must stay the same when the deploying identity changes. The CLI version and the direct deployment engine are pinned.
-- Migrations are `IF NOT EXISTS`, and an applied migration cannot be edited or removed (the checksum is verified). Schema changes go in a new migration. The runner splits statements outside quotes and (nested) comments, and an unclosed token fails before anything runs. `BEGIN ... END` blocks are not supported.
-- Bronze has `pipelines.reset.allowed=false`, and the Job uses `full_refresh: false`: Event Hubs deletes old events, so Bronze cannot be rebuilt. Never destroy the bundle.
-- DEV and PROD have separate checkpoints and different Kafka `groupIdPrefix` values.
-- Gold deduplicates replayed events by `event_id`. Release and volume records are merged by run ID, so a retry does not duplicate them.
-- For the same Silver version and the same build fingerprint (Gold transformations, shared Lab 6 and Lab 8 code, reference snapshot, access policy) the release gate compares the fact count and an order-independent `xxhash64` sum. A changed fingerprint starts a new baseline. The sum is a control, not a proof of equality, and different totals from a live source are not a failure.
-- Event Hubs must keep the checkpointed offsets until the next run; an expired offset fails the run (`failOnDataLoss=true`) instead of losing data.
-- Catalog administrators can override project ACLs. Keeping PROD free of manual changes also means limiting human write access there and deploying only through Git.
+- The bundle name, target and workspace root stay fixed, so deployments reuse resource IDs and deployment state. PROD uses the owner's fixed `prod_workspace_root`.
+- Migrations are append-only and checksummed. Existing files cannot be edited or removed; changes go into a new migration. The runner preserves semicolons inside quotes and comments and rejects unclosed tokens before executing that file. Compound `BEGIN ... END` blocks are outside the migration format.
+- Bronze has `pipelines.reset.allowed=false`, and the Job uses `full_refresh: false`. Event Hub retention must cover the checkpointed offsets; expired offsets fail with `failOnDataLoss=true`.
+- DEV and PROD use separate checkpoints and different Kafka `groupIdPrefix` values.
+- Volume and release records are merged by run ID. Repeated setup keeps the data and skips applied migrations.
 
-## Local checks
+Deployment promotes code and configuration. Each environment reads Event Hub independently, so live row counts can differ between runs. Keeping PROD changes in Git also requires restricting human write access to its resources.
 
-Python 3.12, Java 17 and Databricks CLI 1.10.0:
+## Results
+
+Verified on 2026-10-11. All eight tasks succeeded in each run:
+
+| Run | Bronze | Silver | Quarantine | Gold fact |
+|---|---:|---:|---:|---:|
+| [DEV: first successful run](https://dbc-ab9a5afe-c151.cloud.databricks.com/jobs/639631853603919/runs/964028962110402) | 1,355 | 1,355 | 0 | 1,355 |
+| [DEV: repeated run](https://dbc-ab9a5afe-c151.cloud.databricks.com/jobs/639631853603919/runs/130138297309419) | 5,813 | 5,813 | 0 | 5,813 |
+| [DEV: migration and release-gate fixes](https://dbc-ab9a5afe-c151.cloud.databricks.com/jobs/639631853603919/runs/408896370548989) | 16,638 | 16,638 | 0 | 16,637 |
+| [PROD: Azure trial 2](https://adb-7405618361895520.0.azuredatabricks.net/jobs/534890000465235/runs/475458704371265) | 5,572 | 5,572 | 0 | 5,572 |
+
+The latest DEV run contains one replayed event, so Gold has one fewer row than Silver. The differing capture sizes come from the live source.
+
+- Repeated DEV setup and refresh succeeded with existing tables, policies and checkpoints. The new migration created `ops_release_builds`, and the next setup skipped it.
+- Strict PROD validation and deployment succeeded. A second deployment plan returned `skip` for every resource and permission.
+- All four dashboard queries succeeded on both workspaces, and both dashboards were deployed. Browser rendering has not been checked.
+- The 22-test local suite passed. Offline bundle checks and the workflow checks also passed after the PAT-only CI simplification.
+
+PROD is on the earlier verified deployment, before the migration and release-gate fixes. The remaining acceptance test is a merge to `main` that deploys the current code and finishes with a successful GitHub Actions run and matching `ops_releases.release_commit`. A same-input checksum comparison has not yet been demonstrated in the workspace because the Silver version changed between successful DEV runs.
+
+## Project layout
+
+| Path | What it is |
+|---|---|
+| `databricks.yml` | Bundle variables and the `dev` and `prod` targets |
+| `resources/` | Schemas, pipeline, promotion Job, dashboard and resource permissions |
+| `pipeline/` | Wikipedia Bronze, Silver and quarantine datasets |
+| `notebooks/` | Job task entry points and table operations |
+| `src/lab8/` | Gold builder, migration parser and ledger, release contracts and fingerprints |
+| `sql/migrations/` | Append-only operational and security DDL |
+| `dashboards/`, `sql/dashboard/` | Dashboard JSON and its four dataset queries |
+| `assets/` | Wikimedia reference snapshot and access policy |
+| `tests/` | Local pytest suite |
+| `tools/` | Offline checks, GitHub CI setup and personal-workspace helpers |
+
+The bundle also uploads `lab5/src` and `lab6/src` from the repository. Their existing tables and deployed resources are kept unchanged.
+
+## Targets
+
+| Target | Workspace / compute | Catalog | Schema names |
+|---|---|---|---|
+| `dev` | Personal Free Edition, profile `personal-env`, serverless | `workspace` | `dev_ivanrazumovskyi_ivanrazumovskyi_lab8_silver`, `dev_ivanrazumovskyi_ivanrazumovskyi_lab8_gold` |
+| `prod` | Azure trial 2, profile `azure_trial_2`, serverless | `dbr_dev` | `ivanrazumovskyi_lab8_silver`, `ivanrazumovskyi_lab8_gold` |
+
+The CLI adds the `dev_<user>_` prefix to DEV schema resources. Job parameters, the Volume path and the dashboard use the resolved names.
+Bronze, Silver and quarantine live in the Silver schema; analytical, reference, security and operational tables live in Gold. Wikipedia table names keep the `_lab5` suffix for compatibility with Lab 6.
+
+The workspace, catalog, SQL warehouse, Event Hub and secret scope must already exist. The deployment identity needs catalog/schema access, permission to create Jobs and pipelines, access to serverless compute and the warehouse, and `READ` on `lab5-eventhub / eventhub-connection-string` with Event Hub Listen permission.
+
+From `lab8/`, deploy and test on personal DEV:
+
+```bash
+python tools/personal_cli.py bundle validate --strict
+python tools/personal_cli.py bundle deploy --select jobs.promotion_job
+python tools/personal_cli.py bundle run promotion_job --params release_commit=local
+python tools/validate_dashboard.py
+python tools/personal_cli.py bundle deploy
+```
+
+The helper reads the ignored `.env.personal` and fixes the profile to `personal-env` and the target to `dev`. The first deploy selects the Job and its dependencies; the full deploy includes the dashboard after its queries have been checked against Gold data.
+
+## GitHub Actions
+
+`.github/workflows/lab8-ci.yml` uses PAT authentication and three secrets:
+
+| Where | Secret | Value |
+|---|---|---|
+| Repository | `DATABRICKS_DEV_TOKEN` | personal workspace access token |
+| Environment `lab8-prod` | `DATABRICKS_HOST` | `targets.prod.workspace.host` from `databricks.yml` |
+| Environment `lab8-prod` | `DATABRICKS_TOKEN` | access token for the verified PROD owner |
+
+The PROD job selects Environment `lab8-prod`, which supplies its host and token. These names match the configured GitHub secrets. No additional GitHub Variables are required. The Bundle defaults supply the authenticated user's identity, management permissions, reader and PROD warehouse.
+
+| Job | Runs on | What it does |
+|---|---|---|
+| `tests` | PR to `main`, relevant push to `main`, manual run | checks the bundle offline and runs pytest on local Spark |
+| `validate-dev` | same-repository PR, push to `main`, manual run | configures a host-only profile and runs strict DEV validation |
+| `deploy-prod` | relevant push to `main`, after both checks pass | checks the host and PAT settings, validates and deploys PROD, runs the Job with `release_commit=github.sha` and waits |
+
+Only the deployment job references PROD secrets. Concurrent releases are queued rather than cancelled. `prod-summary.json` and `prod-run.log` are uploaded as artifacts even when a run fails.
+The path filter covers Lab 8, the shared Lab 5/6 modules and this workflow. To require review before production changes, protect `main` with PR review and the two prerequisite checks. The Environment must allow `main` without required reviewers for fully automatic promotion after merge.
+
+## Local tests
+
+Python 3.12, Java 17 and Databricks CLI 1.10.0, from the repository root:
 
 ```bash
 pip install -r lab8/requirements-ci.txt
@@ -92,67 +174,4 @@ TZ=UTC SPARK_LOCAL_IP=127.0.0.1 python -m pytest -c lab8/pytest.ini lab8/tests
 python lab8/tools/check_bundle.py
 ```
 
-`check_bundle.py` validates the target definitions and resources against the CLI JSON schema, the Python syntax, the metadata assets and the dashboard SQL, without connecting to a workspace. It complements `bundle validate`; it does not prove permissions or runtime behavior.
-
-The tests cover the environment boundaries (targets, schemas, compute, no schedules, `full_refresh: false`), the workflow guards (PROD only on push to `main`, PROD secrets only in `deploy-prod`), the migration parser and ledger, the release checks and the Wikipedia transformations.
-
-## Deploy and run in DEV
-
-```bash
-cd lab8
-databricks bundle validate --strict -t dev -p personal-env
-databricks bundle deploy -t dev -p personal-env --select jobs.promotion_job
-databricks bundle run promotion_job -t dev -p personal-env --params release_commit=local
-python tools/validate_dashboard.py
-databricks bundle deploy -t dev -p personal-env
-```
-
-The first deploy selects only the Job and the resources it depends on, so the dashboard queries can be checked on real Gold data before the dashboard is deployed. If the OAuth login has expired, run `databricks auth login --profile personal-env`, or put a token into the ignored `.env.personal` and call the CLI through `python tools/personal_cli.py ...`; the helper fixes the profile and the `dev` target.
-
-## GitHub setup
-
-Add these three repository secrets. PROD secrets may alternatively be stored in
-the `lab8-prod` Environment used by the deployment job. If that Environment has
-deployment restrictions, allow `main`; leave required reviewers unset for fully
-automatic promotion after merge.
-
-| Where | Name | Value |
-|---|---|---|
-| Repository secret | `DATABRICKS_DEV_TOKEN` | access token for the personal workspace |
-| Repository secret | `DATABRICKS_PROD_HOST` | the PROD host from `databricks.yml` |
-| Repository secret | `DATABRICKS_PROD_TOKEN` | access token for the already-tested PROD owner |
-
-The workflow uses the Bundle defaults for run identity, management permissions,
-reader (the authenticated PAT owner), and PROD warehouse (`d8b8ff9942968cb8`).
-No OAuth client credentials or `LAB8_*` variables are needed. A qualifying push
-to `main` automatically deploys and runs PROD after both prerequisite jobs pass.
-
-The same identity deploys and runs the bundle. It needs `USE CATALOG` and `CREATE SCHEMA` on `dbr_dev`, access to the deployment folder, permission to create Jobs and pipelines, `CAN_USE` on the warehouse, and `READ` on the secret `lab5-eventhub / eventhub-connection-string` (Event Hub Listen access, broker reachable on TCP 9093). Tokens and secrets are never committed; `.env.*` files are ignored by Git.
-
-## Results
-
-Run on 2026-10-11 (run details and deployment plans are in the ignored `evidence/` folder):
-
-- **DEV:** all eight tasks succeeded: Bronze, Silver and Gold each held 1,355 events and quarantine was empty. A second run against the existing resources also succeeded (5,813 unique Gold events as the live source grew), which shows the deployment is repeatable. After the review fixes (SQL splitting, build fingerprint, single PROD host) strict validation passed and a third run succeeded; the new migration created `ops_release_builds` and a repeated setup skipped it.
-- **PROD (`azure_trial_2`):** strict validation passed, the bundle deployed and the Job ran with all eight tasks green: Bronze and Silver 5,572 events each, quarantine empty. A second deployment plan reported `skip` for every resource and permission, so redeploying changes nothing. PROD is still on this earlier deployment and does not yet contain the review fixes.
-- All four dashboard queries ran on both workspaces, and the dashboards were deployed. Browser rendering has not been checked.
-- 22 tests and the offline bundle checks pass.
-
-Not done yet: a successful run of the merge-to-`main` workflow in GitHub Actions (the repository secrets and the Environment must be configured first), and the same-input checksum comparison, because the Silver version changed between the DEV runs. Direct CLI runs do not replace that acceptance test.
-
-## Project layout
-
-| Path | What it is |
-|---|---|
-| `databricks.yml` | Bundle: variables and the targets `dev` and `prod` |
-| `resources/` | Schemas, pipeline, promotion Job, dashboard |
-| `pipeline/` | Lakeflow sources: Bronze, Silver, quarantine |
-| `notebooks/` | Task implementations: setup, reference, gold, governance, validation, volume, release gate |
-| `src/lab8/` | Migration parser and ledger, release contracts |
-| `sql/migrations/`, `sql/dashboard/` | Versioned DDL and the dashboard queries |
-| `dashboards/`, `assets/` | Dashboard JSON, reference snapshot, access policy |
-| `tests/` | pytest suite |
-| `tools/` | Offline bundle and dashboard checks, personal-workspace helpers |
-| `AGENTS.md` | Rules for AI assistants working in this folder |
-
-References: [GitHub Actions CI/CD](https://docs.databricks.com/aws/en/dev-tools/ci-cd/github), [bundle identities](https://docs.databricks.com/aws/en/dev-tools/bundles/run-as), [Kafka group IDs and offsets](https://spark.apache.org/docs/4.1.2/streaming/structured-streaming-kafka-integration.html).
+Tests cover Wikipedia quality rules and replay deduplication, migration checksums and SQL splitting, build-scoped release checks, credential isolation and the DEV/PROD workflow boundaries. The offline checker validates the CLI resource schema, Python syntax, reference assets and consistency between dashboard SQL and JSON. Live data and governance checks run in the promotion Job.
