@@ -1,6 +1,6 @@
 # Lab 8 - CI/CD: DEV to PROD promotion
 
-The Wikipedia pipeline and Gold analytics from Labs 5 and 6, packaged as one Databricks Asset Bundle with two environments and a GitHub Actions workflow.
+The Wikipedia pipeline and Gold analytics from Labs 5-7, packaged as one Databricks Asset Bundle with two environments and a GitHub Actions workflow.
 Pull requests run tests and validate DEV. A merge to `main` deploys PROD, runs the promotion Job and waits for its result.
 
 Lab 5 parsing and quality rules and Lab 6 transformations are reused from their shared modules. Lab 8 creates its own schemas and resources. The Wikipedia producer runs on an external machine and sends events to the existing Event Hub.
@@ -76,7 +76,7 @@ For the same Silver version and build fingerprint, the gate compares the fact co
 
 - The bundle name, target and workspace root stay fixed, so deployments reuse resource IDs and deployment state. PROD uses the owner's fixed `prod_workspace_root`.
 - Migrations are append-only and checksummed. Existing files cannot be edited or removed; changes go into a new migration. The runner preserves semicolons inside quotes and comments and rejects unclosed tokens before executing that file. Compound `BEGIN ... END` blocks are outside the migration format.
-- Bronze has `pipelines.reset.allowed=false`, and the Job uses `full_refresh: false`. Event Hub retention must cover the checkpointed offsets; expired offsets fail with `failOnDataLoss=true`.
+- Bronze has `pipelines.reset.allowed=false`, and the Job uses `full_refresh: false`. Lab 8 overrides the shared Kafka options with `failOnDataLoss=false`: after Event Hubs' one-hour retention expires, ingestion skips unavailable offsets and continues with available events, preserving checkpoints and accumulated tables. Events that expired before ingestion are not recovered; complete source history is not guaranteed. Quality and repeatability checks still apply to ingested data.
 - DEV and PROD use separate checkpoints and different Kafka `groupIdPrefix` values.
 - Volume and release records are merged by run ID. Repeated setup keeps the data and skips applied migrations.
 
@@ -90,7 +90,7 @@ Verified on 2026-10-11. All eight tasks succeeded in each run:
 |---|---:|---:|---:|---:|
 | [DEV: first successful run](https://dbc-ab9a5afe-c151.cloud.databricks.com/jobs/639631853603919/runs/964028962110402) | 1,355 | 1,355 | 0 | 1,355 |
 | [DEV: repeated run](https://dbc-ab9a5afe-c151.cloud.databricks.com/jobs/639631853603919/runs/130138297309419) | 5,813 | 5,813 | 0 | 5,813 |
-| [DEV: migration and release-gate fixes](https://dbc-ab9a5afe-c151.cloud.databricks.com/jobs/639631853603919/runs/408896370548989) | 16,638 | 16,638 | 0 | 16,637 |
+| [DEV: after review fixes](https://dbc-ab9a5afe-c151.cloud.databricks.com/jobs/639631853603919/runs/408896370548989) | 16,638 | 16,638 | 0 | 16,637 |
 | [PROD: Azure trial 2](https://adb-7405618361895520.0.azuredatabricks.net/jobs/534890000465235/runs/475458704371265) | 5,572 | 5,572 | 0 | 5,572 |
 
 The latest DEV run contains one replayed event, so Gold has one fewer row than Silver. The differing capture sizes come from the live source.
@@ -98,9 +98,9 @@ The latest DEV run contains one replayed event, so Gold has one fewer row than S
 - Repeated DEV setup and refresh succeeded with existing tables, policies and checkpoints. The new migration created `ops_release_builds`, and the next setup skipped it.
 - Strict PROD validation and deployment succeeded. A second deployment plan returned `skip` for every resource and permission.
 - All four dashboard queries succeeded on both workspaces, and both dashboards were deployed. Browser rendering has not been checked.
-- The 22-test local suite passed. Offline bundle checks and the workflow checks also passed after the PAT-only CI simplification.
+- The 22-test local suite passed. Offline bundle checks and the workflow checks passed as well.
 
-PROD is on the earlier verified deployment, before the migration and release-gate fixes. The remaining acceptance test is a merge to `main` that deploys the current code and finishes with a successful GitHub Actions run and matching `ops_releases.release_commit`. A same-input checksum comparison has not yet been demonstrated in the workspace because the Silver version changed between successful DEV runs.
+PROD is on the earlier verified deployment, before the review fixes. The remaining acceptance test is a merge to `main` that deploys the current code and finishes with a successful GitHub Actions run and matching `ops_releases.release_commit`. A same-input checksum comparison has not yet been demonstrated in the workspace because the Silver version changed between successful DEV runs.
 
 ## Project layout
 
