@@ -1,0 +1,88 @@
+resources:
+  jobs:
+    promotion_job:
+      name: lab8-wikipedia-promotion-${bundle.target}
+      description: Idempotent setup, triggered live Wikipedia ingestion, Gold, governance and release
+        gate
+      permissions: ${var.manage_permissions}
+      max_concurrent_runs: 1
+      timeout_seconds: 7200
+      queue:
+        enabled: true
+      parameters:
+      - name: catalog
+        default: ${var.catalog}
+      - name: schema
+        default: ${resources.schemas.gold_schema.name}
+      - name: source_schema
+        default: ${resources.schemas.silver_schema.name}
+      - name: source_code_path
+        default: ${workspace.file_path}/lab6/src
+      - name: code_root
+        default: ${workspace.file_path}
+      - name: metadata_path
+        default: /Volumes/${var.catalog}/${resources.schemas.gold_schema.name}/lab8_assets/metadata/wikimedia.json
+      - name: refresh_reference
+        default: 'false'
+      - name: reader_principal
+        default: ${var.reader_principal}
+      - name: release_commit
+        default: local
+      - name: run_id
+        default: '{{job.run_id}}'
+      tasks:
+      - task_key: setup
+        max_retries: 0
+        timeout_seconds: 2400
+        notebook_task:
+          notebook_path: ../notebooks/setup.py
+      - task_key: ingestion
+        max_retries: 0
+        timeout_seconds: 2400
+        depends_on:
+        - task_key: setup
+        pipeline_task:
+          pipeline_id: ${resources.pipelines.wiki_pipeline.id}
+          full_refresh: false
+      - task_key: reference
+        max_retries: 0
+        timeout_seconds: 2400
+        depends_on:
+        - task_key: ingestion
+        notebook_task:
+          notebook_path: ../notebooks/reference.py
+      - task_key: gold
+        max_retries: 0
+        timeout_seconds: 2400
+        depends_on:
+        - task_key: reference
+        notebook_task:
+          notebook_path: ../notebooks/gold.py
+      - task_key: governance
+        max_retries: 0
+        timeout_seconds: 2400
+        depends_on:
+        - task_key: gold
+        notebook_task:
+          notebook_path: ../notebooks/governance.py
+      - task_key: validation
+        max_retries: 0
+        timeout_seconds: 2400
+        depends_on:
+        - task_key: governance
+        notebook_task:
+          notebook_path: ../notebooks/validation.py
+      - task_key: volume
+        max_retries: 0
+        timeout_seconds: 2400
+        depends_on:
+        - task_key: validation
+        notebook_task:
+          notebook_path: ../notebooks/volume.py
+      - task_key: release_gate
+        max_retries: 0
+        timeout_seconds: 2400
+        depends_on:
+        - task_key: volume
+        notebook_task:
+          notebook_path: ../notebooks/release_gate.py

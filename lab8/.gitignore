@@ -1,0 +1,6 @@
+evidence/*
+!evidence/.gitkeep
+
+# Local copies of GitHub Actions deployment artifacts
+/prod-summary.json
+/prod-run.log

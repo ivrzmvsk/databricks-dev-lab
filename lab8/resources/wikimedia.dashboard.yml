@@ -1,0 +1,10 @@
+resources:
+  dashboards:
+    wiki_dashboard:
+      display_name: Lab 8 - Wikimedia Activity - ${bundle.target}
+      file_path: ../dashboards/wikimedia_activity.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${resources.schemas.gold_schema.name}
+      embed_credentials: false
+      permissions: ${var.manage_permissions}
