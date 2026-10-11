@@ -90,8 +90,8 @@ jobs:
       cancel-in-progress: false
     env:
       DATABRICKS_AUTH_TYPE: pat
-      DATABRICKS_HOST: ${{ secrets.DATABRICKS_PROD_HOST }}
-      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_PROD_TOKEN }}
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
     defaults:
       run:
         working-directory: lab8
