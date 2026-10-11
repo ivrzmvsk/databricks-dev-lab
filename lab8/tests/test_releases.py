@@ -2,7 +2,16 @@ from types import SimpleNamespace
 
 import pytest
 
-from lab8.releases import check_repeatability, gold_build_fingerprint
+from lab8.releases import (
+    check_repeatability, gold_build_fingerprint, validate_build_fingerprint,
+)
+
+
+def test_build_fingerprint_requires_a_lowercase_sha256():
+    validate_build_fingerprint('0123456789abcdef' * 4)
+    for invalid in ('', 'a' * 63, 'a' * 65, 'g' * 64, 'A' * 64):
+        with pytest.raises(ValueError, match='valid build fingerprint'):
+            validate_build_fingerprint(invalid)
 
 
 def test_repeatability_is_scoped_to_data_and_build_inputs():

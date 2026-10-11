@@ -33,7 +33,7 @@ applied = {r.migration: r.checksum for r in spark.table(ledger).collect()}
 for name, checksum, content in pending_migrations(
     list((root / "lab8/sql/migrations").glob("*.sql")), applied
 ):
-    for statement in split_sql(content.replace('{namespace}', config.namespace)):
+    for statement in split_sql(content.replace("{namespace}", config.namespace)):
         spark.sql(statement)
     spark.sql(f"""MERGE INTO {ledger} t USING (
         SELECT {sql_string(name)} migration, {sql_string(checksum)} checksum,
@@ -64,11 +64,15 @@ owner = spark.sql("SELECT session_user()").first()[0]
 policy = json.loads((root / "lab8/assets/access_policy.json").read_text())
 rows = [(owner, "*", True, "Lab 8 execution identity")]
 if reader and reader != owner:
-    rows.extend((reader, wiki, policy["reader_can_view_editor"], "Lab 8 code-managed reader")
-                for wiki in policy["reader_wikis"])
-access = spark.createDataFrame(rows, "username STRING, wiki STRING, can_view_editor BOOLEAN, access_reason STRING")
+    rows.extend(
+        (reader, wiki, policy["reader_can_view_editor"], "Lab 8 code-managed reader")
+        for wiki in policy["reader_wikis"]
+    )
+access = spark.createDataFrame(
+    rows, "username STRING, wiki STRING, can_view_editor BOOLEAN, access_reason STRING"
+)
 access.createOrReplaceTempView("_lab8_access")
-spark.sql(f"""MERGE INTO {config.table('sec_user_access')} t USING _lab8_access s
+spark.sql(f"""MERGE INTO {config.table("sec_user_access")} t USING _lab8_access s
     ON t.username = s.username AND t.wiki = s.wiki
     WHEN MATCHED THEN UPDATE SET t.can_view_editor = s.can_view_editor,
         t.access_reason = s.access_reason, t.updated_at = current_timestamp()
@@ -76,7 +80,11 @@ spark.sql(f"""MERGE INTO {config.table('sec_user_access')} t USING _lab8_access 
         (username, wiki, can_view_editor, access_reason, updated_at)
         VALUES (s.username, s.wiki, s.can_view_editor, s.access_reason, current_timestamp())
     WHEN NOT MATCHED BY SOURCE THEN DELETE""")
-result = {"schema": config.namespace, "metadata_sha256": hashlib.sha256(content).hexdigest(),
-          "execution_identity": owner, "reader": reader}
+result = {
+    "schema": config.namespace,
+    "metadata_sha256": hashlib.sha256(content).hexdigest(),
+    "execution_identity": owner,
+    "reader": reader,
+}
 print(json.dumps(result))
 dbutils.notebook.exit(json.dumps(result))

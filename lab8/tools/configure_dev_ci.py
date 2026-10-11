@@ -2,13 +2,15 @@
 import os
 from pathlib import Path
 
+from personal_cli import PERSONAL_HOST
+
 
 def main():
     if not os.environ.get('DATABRICKS_TOKEN'):
         raise SystemExit('Configure DATABRICKS_DEV_TOKEN in GitHub Secrets')
     config = Path(os.environ['RUNNER_TEMP']) / 'lab8-databrickscfg'
     config.write_text(
-        '[personal-env]\nhost = https://dbc-ab9a5afe-c151.cloud.databricks.com\n'
+        f'[personal-env]\nhost = {PERSONAL_HOST}\n'
     )
     config.chmod(0o600)
     with open(os.environ['GITHUB_ENV'], 'a') as environment:
