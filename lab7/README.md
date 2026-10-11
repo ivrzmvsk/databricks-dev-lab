@@ -1,16 +1,11 @@
 # Lab 7 - Data quality testing and unit tests
 
 Unit tests for the Wikipedia transformations, and a data-quality suite over the medallion: Lakeflow expectations, a quarantine table, Delta constraints, DQX checks and reconciliation between layers.
-The suite runs as a headless Job that fails when mandatory checks fail, and the unit tests run in GitHub Actions on local Spark.
+The suite runs as a Job that fails when a mandatory check fails, and the unit tests and lint run in GitHub Actions.
 
-Only Wikipedia is used. Lab 5 Bronze is read at one pinned Delta version, and the Lab 5 and Lab 6 transformation modules are reused.
-All Lab 7 output goes to its own schema, `ivanrazumovskyi_lab7`.
-
-Lab 5 Bronze (pinned version) → Job `lab7-wikipedia-quality-gate` (4 tasks) → quality pipeline, constrained `fact_edits`, `dq_results`.
+Lab 5 Bronze is read at one pinned Delta version and the Lab 5 and Lab 6 transformation modules are reused. All Lab 7 output goes to its own schema, `ivanrazumovskyi_lab7`.
 
 ## Flow
-
-### Data
 
 ```mermaid
 flowchart TD
@@ -27,58 +22,42 @@ flowchart TD
     R --> DQ[dq_results]
 ```
 
-### Job
+The Job `lab7-wikipedia-quality-gate` runs four tasks in sequence:
 
 ```mermaid
 flowchart LR
     T1[snapshot] --> T2[unit_tests] --> T3[quality_pipeline] --> T4[constraints_and_gate]
 ```
 
-The Job `lab7-wikipedia-quality-gate` runs these four tasks in sequence. A mandatory check that fails in the last task fails the Job.
-Before its first run, execute the separate `lab7-wikipedia-setup` Job.
-Setup creates the schema and constrained fact table without reading `fact_candidate`:
-the schema is derived from empty Wikipedia transformations. Setup reruns preserve data.
-Run setup again when provisioning a new environment or installing missing constraints;
-an incompatible existing fact schema requires an explicit migration.
-
 | Task | What it does |
 |---|---|
 | `snapshot` | copies the pinned Lab 5 Bronze version into `bronze_snapshot`, records it in `snapshot_manifest`, saves rejected demo rows to `wiki_quarantine_demo` |
-| `unit_tests` | runs the pytest suite against the Job's own Spark session |
+| `unit_tests` | runs the pytest suite on the Job's Spark session |
 | `quality_pipeline` | Lakeflow pipeline: classification, quarantine, deduplication, fact, dimensions, aggregates |
-| `constraints_and_gate` | publishes `fact_edits` with constraints, proves invalid inserts are rejected, runs all checks, writes `dq_results`, raises on mandatory failures |
+| `constraints_and_gate` | publishes `fact_edits`, proves invalid inserts are rejected, runs all checks, writes `dq_results`, fails the Job on a mandatory failure |
 
-A separate pipeline, `lab7_fail_demo`, is a deliberate negative test that runs on demand.
+The separate Job `lab7-wikipedia-setup` creates the schema and the constrained `fact_edits` table once; reruns keep the data. The pipeline `lab7_fail_demo` is a deliberate negative test that runs on demand.
 
-## Part A - Unit tests
+## Unit tests
 
-The transformations are importable modules, shared by the pipeline, the notebooks and the tests:
+The transformations are importable modules, used by the pipeline, the notebooks and the tests:
 
 | Module | Content |
 |---|---|
 | `lab5/src/lab5/transforms.py`, `lab6/src/lab6/transforms.py` | JSON parsing, fallback event ID, quality annotation, wiki-scoped keys, UTC buckets, byte measures, aggregates |
-| `src/lab7/quality.py` | rules, pure classification, deduplication ranking, fact and dimension builders, reference join, reconciliation, freshness |
-| `src/lab7/checks.py` | tested DQ groups and report summary, with explicit DataFrames, clock and DQX engine |
+| `src/lab7/quality.py` | rules, classification, deduplication ranking, fact and dimension builders, reference join, reconciliation, freshness |
+| `src/lab7/checks.py` | the DQ check groups and the report summary; they take DataFrames, the clock and the DQX engine as arguments |
 | `src/lab7/dqx_checks.py` | DQX checks built from the same rules |
-| `src/lab7/constraints.py` | shared fact contract, setup schema derivation and tested structured-error helpers |
-| `src/lab7/source_validation.py` | tested reconciliation of supplied Gold and pinned Silver DataFrames |
-| `src/lab7/tables.py` | small write helper reused by the notebooks |
+| `src/lab7/constraints.py` | fact contract (NOT NULL columns, CHECK constraints, negative writes) and Delta error helpers |
+| `src/lab7/source_validation.py` | reconciliation of Lab 6 Gold with the pinned Silver |
+| `src/lab7/config.py`, `tables.py` | schema config with identifier checks, table write helper |
 
-Task-specific reads and writes, and the explicit sequence of check groups, remain in notebook cells.
-The same check functions are called directly by pytest; no check function loads or writes tables.
-Common widget parameters use `notebook_config()`; each notebook keeps a short path bootstrap.
-`00_setup.py` provisions infrastructure, `01_snapshot.py` freezes and inspects data,
-and `03_gate.py` publishes fact, tests rejected writes and runs each DQ group.
-There is no `runtime.py` or notebook that delegates the whole task to `run_suite()`.
+The notebooks hold the table reads and writes and call the check groups one by one: `00_setup.py` provisions the fact table, `01_snapshot.py` freezes the data, `03_gate.py` publishes the fact, tests rejected writes and runs the DQ groups.
 
-Tests call the same DQ groups used by `03_gate.py`, including failures for missing deliveries,
-orphan keys, corrupt aggregates, DQX violations and late events. They also verify summary
-severity and the shared negative-write expressions.
+The tests cover JSON parsing and malformed payloads, rejection reasons, deduplication, wiki-scoped keys, UTC buckets, nullable byte measures, reference joins, aggregates, freshness boundaries and each DQ check group with its failure cases: lost deliveries, orphan keys, corrupt aggregates, DQX violations and late events. They also verify that mandatory failures block the gate and warnings do not.
+Nine synthetic records (six invalid, two valid, one repeated delivery) are used in pytest and in `wiki_quarantine_demo`.
 
-The tests (`tests/`) cover JSON parsing and malformed payloads, rejection reasons, branch accounting, deduplication, wiki-scoped keys, UTC bucket boundaries, nullable byte measures, reference joins, aggregates, freshness boundaries, constraint-error handling and the failing gate.
-Nine synthetic records (six invalid, two valid, one repeated delivery) run inside pytest and in `wiki_quarantine_demo`.
-
-One suite, three ways to run it:
+The same suite runs in three ways:
 
 ```bash
 # 1. Local Spark (Java 17, Python 3.12); the same command runs in CI
@@ -99,13 +78,9 @@ databricks bundle run lab7_setup_job -t personal
 databricks bundle run lab7_quality_job -t personal
 ```
 
-`conftest.py` selects the Spark session from `LAB7_SPARK_BACKEND` (`local`, `connect` or `runtime`).
-Databricks Connect has its own environment.
-For debugging, select `.venv-connect` as the interpreter and run `tools/debug_connect.py` with a breakpoint on the classification step: the Python code runs locally, Spark actions run remotely. A VS Code launch template is in `ide/launch.json`.
+`conftest.py` selects the Spark session from `LAB7_SPARK_BACKEND` (`local`, `connect` or `runtime`). For debugging, select `.venv-connect` as the interpreter and run `tools/debug_connect.py` with a breakpoint on the classification step: the Python code runs locally and the Spark actions run remotely. A VS Code launch template is in `ide/launch.json`.
 
-Connect runs against the serverless compute of the personal workspace.
-
-## Part B - Data quality
+## Data quality
 
 ### Dimensions
 
@@ -117,23 +92,21 @@ Connect runs against the serverless compute of the personal workspace.
 | Consistency | `bytes_delta = bytes_added - bytes_removed`, fact → dimension references, wiki → SiteMatrix reference, layer reconciliation, Lab 6 Gold totals | fact invariants fail the pipeline, the rest fails the gate |
 | Timeliness | every delivery arrives 0-3600 s after its event time; snapshot age; age of the source | delivery violations and snapshot age fail the gate, historical source age is a warning |
 
-`old_length` and `new_length` may be missing: the derived byte measures then stay NULL. SQL NULL in a predicate counts as a failure.
+`old_length` and `new_length` may be missing; the derived byte measures then stay NULL. SQL NULL in a predicate counts as a failure.
 
 ### Lakeflow gates and quarantine
 
-The accepted branch uses `expect_all_or_drop` with all 11 named rules, so every rule has its own counter in the pipeline UI and event log.
-Rejected rows go to `wiki_quarantine` with the raw JSON, Kafka coordinates, `_quality_errors` and the snapshot ID. `fact_candidate` uses `expect_all_or_fail` on the fact invariants.
-`wiki_quarantine_demo` holds six persisted rejected synthetic examples with raw JSON and reasons.
+The accepted branch uses `expect_all_or_drop` with all 11 named rules, so every rule has its own counter in the pipeline UI and event log. `fact_candidate` uses `expect_all_or_fail` on the fact invariants.
+Rejected rows go to `wiki_quarantine` with the raw JSON, Kafka coordinates, `_quality_errors` and the snapshot ID. `wiki_quarantine_demo` holds six persisted rejected examples with raw JSON and reasons.
 
 ### Delta constraints
 
-`fact_edits` is a regular Delta table provisioned by the separate setup Job and refreshed by the gate task using INSERT OVERWRITE, which retains constraints. It has NOT NULL on the keys and `edit_count`, and CHECK constraints `one_edit`, `lengths_nonnegative` and `bytes_consistent`.
+`fact_edits` is a regular Delta table with NOT NULL on the keys and `edit_count`, and CHECK constraints `one_edit`, `lengths_nonnegative` and `bytes_consistent`.
 The gate task inserts four invalid rows (NULL `event_id`, `edit_count = -1`, negative `old_length`, inconsistent `bytes_delta`). Each is rejected with the expected structured Delta error and constraint name, and the row count stays the same.
 
 ### DQX
 
-`src/lab7/dqx_checks.py` uses Databricks Labs DQX 0.16.0. The shared rules become named DQX checks; `is_unique` and `foreign_key` validate the fact and its five dimensions.
-DQX runs in the gate and the integration tests. Failed fact rows are saved to `dqx_fact_quarantine` (empty on healthy data) before the gate raises.
+`src/lab7/dqx_checks.py` uses Databricks Labs DQX 0.16.0. The shared rules become named DQX checks, and `is_unique` and `foreign_key` validate the fact and its five dimensions. Failed fact rows are saved to `dqx_fact_quarantine` before the gate raises.
 
 ### Reconciliation
 
@@ -144,15 +117,11 @@ SUM(edit_count) of each aggregate = COUNT(fact)
 SUM(bytes_added, bytes_removed, net_bytes_delta) of each aggregate = the same sums over fact
 ```
 
-Deliveries are also compared as a multiset on their Kafka coordinates, so equal totals cannot hide one lost and one extra row. The Lab 6 Gold validation is run against its pinned Silver version as well.
-The source-table reads and pinned-version selection are visible in `03_gate.py`.
-The frame-level check is in `lab7.source_validation`; its tests cover lost rows,
-duplicate events, orphan keys and corrupted aggregate and byte measures.
+Deliveries are also compared as a multiset on their Kafka coordinates, so equal totals cannot hide one lost and one extra row. The Lab 6 Gold tables are validated against their pinned Silver version (`lab7.source_validation`).
 
 ### Gate and results table
 
-The suite writes every check to `dq_results` (check, dimension, severity, observed, expected, details) before raising, so a failed run can still be inspected.
-Mandatory failures fail the Job; warnings do not. `sql/inspect_quality.sql` shows the checks, quarantine reasons, duplicates and the table DDL.
+Every check is written to `dq_results` (check, dimension, severity, observed, expected, details) before the gate raises, so a failed run can be inspected. Mandatory failures fail the Job and warnings are reported. `sql/inspect_quality.sql` shows the checks, quarantine reasons, duplicates and the table DDL.
 
 ### Negative test
 
@@ -160,7 +129,7 @@ Mandatory failures fail the Job; warnings do not. `sql/inspect_quality.sql` show
 databricks bundle run lab7_fail_demo -t personal
 ```
 
-The pipeline `lab7_fail_demo` sets one edit count to -1 and must fail on `one_edit`.
+The pipeline `lab7_fail_demo` sets one edit count to -1 and fails on `one_edit`.
 
 ## Tables
 
@@ -186,15 +155,13 @@ Lab 5 Bronze version 27, personal workspace:
 - The one duplicate is a repeated real event. All 11 rules passed for all 23,844 deliveries, so the real quarantine is empty.
 - The suite ran 63 checks: 62 mandatory checks passed, and one warning reports the age of the historical source.
 - Delivery delay: 0 violations, minimum 425 s, maximum 3,010 s, p95 2,882 s.
-- All four invalid inserts were rejected with the expected constraint; the fact kept 23,843 rows.
+- All four invalid inserts were rejected with the expected constraint, and the fact kept 23,843 rows.
 - `lab7_fail_demo` failed on `one_edit`, as intended.
 - Dimension keys are unique, all fact references resolve, and the Lab 6 Gold reconciliation passed.
-- The separate setup Job and all 63 local/headless tests passed. First table creation
-  and repeated setup were verified without requiring a pipeline-owned candidate table.
+- The setup Job and all 63 tests passed locally and in the Job.
+- On the Azure trial workspace, the setup and quality Jobs succeeded: Lab 5 Bronze version 8 with 6,116 rows reconciled to 6,116 Silver and Fact rows, 62 mandatory checks passed and all four invalid writes were rejected.
 
-The [current Job run](https://dbc-ab9a5afe-c151.cloud.databricks.com/jobs/228507581941930/runs/381144064412640?o=7474655630219513)
-succeeded on the first attempt: snapshot, all 63 tests, pipeline and gate.
-The screenshot below shows the same four-task layout from an earlier run:
+Job `lab7-wikipedia-quality-gate`, all four tasks succeeded:
 
 ![job graph](screenshots/01_job_graph.png)
 
@@ -210,11 +177,11 @@ Negative test `lab7_fail_demo`: the pipeline fails on purpose, with one unmet ex
 
 | Path | What it is |
 |---|---|
-| `databricks.yml` | Bundle: variables and the targets `personal` and `azure_dev` |
-| `resources/` | Separate setup Job, quality Job, quality pipeline, negative-test pipeline |
-| `src/lab7/` | Rules, pure transformations, DQX checks, tested helpers and shared contracts |
+| `databricks.yml` | Bundle: variables and the targets `personal`, `azure_trial_2` and `azure_dev` |
+| `resources/` | Setup Job, quality Job, quality pipeline, negative-test pipeline |
+| `src/lab7/` | Rules, transformations, check groups, DQX checks, constraints contract |
 | `pipeline/` | Lakeflow pipeline source and the negative-test pipeline |
-| `notebooks/` | Setup and readable task workflows split into named cells |
+| `notebooks/` | Setup, snapshot, unit tests and gate notebooks |
 | `tests/` | pytest suite |
 | `tools/` | Debugging and inspection helpers |
 | `sql/inspect_quality.sql` | Queries over the quality tables |
@@ -228,58 +195,17 @@ Negative test `lab7_fail_demo`: the pipeline fails on purpose, with one unmet ex
 | `azure_trial_2` | Azure trial 2 (profile `azure_trial_2`), serverless | `dbr_dev.ivanrazumovskyi_lab7` |
 | `azure_dev` | Azure Dev, classic compute | `dbr_dev.ivanrazumovskyi_lab7` |
 
-The `azure_dev` target is deployed with:
-
-```bash
-cd lab7
-databricks bundle validate --strict -t azure_dev
-databricks bundle deploy -t azure_dev
-```
-
-## Azure trial 2 deployment
-
-The target follows Lab 6: profile `azure_trial_2`, catalog `dbr_dev`, serverless compute,
-and paused triggers. The bundle keeps its own deployment state under the target-specific
-workspace path. Both pipelines use serverless; the quality Job's test and gate tasks use
-the pinned pytest/DQX environment. A SQL warehouse ID is not required.
-
-Deployment commands from the repository root:
-
 ```bash
 cd lab7
 databricks bundle validate --strict -t azure_trial_2 --profile azure_trial_2
 databricks bundle deploy -t azure_trial_2 --profile azure_trial_2
+
+databricks bundle validate --strict -t azure_dev
+databricks bundle deploy -t azure_dev
 ```
 
-Deployment creates/updates two Jobs (`lab7_setup_job`, `lab7_quality_job`) and two pipelines
-(`lab7_quality_pipeline`, `lab7_fail_demo`), and uploads the notebooks, tests and the shared
-Lab 5/6 transformation modules. Deployment does not run the Jobs or pipelines.
-
-For eventual execution, the workspace must already contain the Lab 5/6 data in
-`dbr_dev.ivanrazumovskyi_lab5` and `dbr_dev.ivanrazumovskyi_lab6`. Lab 7 reads Bronze,
-the pinned Silver history, Gold facts/dimensions/aggregates, SiteMatrix and the Lab 6
-operational tables. The execution identity needs read access to these sources and
-permission to create/use the isolated `dbr_dev.ivanrazumovskyi_lab7` schema and its tables.
-The source Delta history referenced by `lab6.source_version` must still be available.
-
-Table and constraint provisioning belongs to the separate setup Job; deployment alone
-does not create these data tables. Any later execution starts with setup, followed by
-the quality Job. The expected-failure pipeline is a separate, manual demonstration.
-Validation, deployment and execution in `azure_trial_2` were explicitly authorized
-for the agent. The separate `azure_dev` target remains deployment-only by the owner.
-
-### Verified Azure trial 2 run
-
-The [setup run](https://adb-7405618361895520.0.azuredatabricks.net/jobs/226266504879911/runs/613102026727399)
-and [full quality run](https://adb-7405618361895520.0.azuredatabricks.net/jobs/581172352017941/runs/855420233105391)
-succeeded on 2026-10-09. The quality run passed all 63 server-side tests and 62 mandatory
-DQ checks; the remaining check warns about the age of the historical source.
-Lab 5 Bronze version 8 contains 6,116 rows, reconciled to 6,116 Silver and Fact rows,
-with no duplicates or real quarantine. All four invalid writes were rejected;
-six synthetic rejects are stored separately in `wiki_quarantine_demo`.
-Local evidence: `evidence/azure_trial_2_setup.json` and `evidence/azure_trial_2_quality.json`.
+Deployment creates the two Jobs (`lab7_setup_job`, `lab7_quality_job`) and the two pipelines (`lab7_quality_pipeline`, `lab7_fail_demo`) and uploads the notebooks, tests and the shared Lab 5/6 modules. A run starts with the setup Job, followed by the quality Job. The target workspace needs the Lab 5 and Lab 6 data in `dbr_dev.ivanrazumovskyi_lab5` and `dbr_dev.ivanrazumovskyi_lab6`, including the Silver Delta history referenced by `lab6.source_version`.
 
 ## CI
 
-`.github/workflows/lab7-ci.yml` installs `requirements-ci.txt`, runs Ruff (including unused imports and the 100-character line limit), and runs the pytest suite on local Spark for pushes, pull requests and manual runs.
-The checks against the real tables run in the headless Job.
+`.github/workflows/lab7-ci.yml` installs `requirements-ci.txt`, runs Ruff (unused imports, 100-character line limit) and the pytest suite on local Spark for pushes, pull requests and manual runs. The checks against the real tables run in the Job.
