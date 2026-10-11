@@ -23,6 +23,9 @@ def wiki_bronze():
         secret,
         int(spark.conf.get("lab8.max_offsets_per_trigger")),
     )
+    # Lab 8 accepts gaps after Event Hubs' one-hour retention expires.
+    # Resume from available offsets without resetting checkpoints or Bronze.
+    options["failOnDataLoss"] = "false"
     # Spark appends a unique ID; never force kafka.group.id across environments.
     options["groupIdPrefix"] = spark.conf.get("lab8.consumer_group_prefix")
     return decode_kafka(spark.readStream.format("kafka").options(**options).load())
