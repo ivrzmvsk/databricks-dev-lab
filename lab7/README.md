@@ -225,6 +225,7 @@ Negative test `lab7_fail_demo`: the pipeline fails on purpose, with one unmet ex
 | Target | Workspace / compute | Catalog.schema |
 |---|---|---|
 | `personal` | Free Edition (profile `personal-env`), serverless | `workspace.ivanrazumovskyi_lab7` |
+| `azure_trial_2` | Azure trial 2 (profile `azure_trial_2`), serverless | `dbr_dev.ivanrazumovskyi_lab7` |
 | `azure_dev` | Azure Dev, classic compute | `dbr_dev.ivanrazumovskyi_lab7` |
 
 The `azure_dev` target is deployed with:
@@ -234,6 +235,49 @@ cd lab7
 databricks bundle validate --strict -t azure_dev
 databricks bundle deploy -t azure_dev
 ```
+
+## Azure trial 2 deployment
+
+The target follows Lab 6: profile `azure_trial_2`, catalog `dbr_dev`, serverless compute,
+and paused triggers. The bundle keeps its own deployment state under the target-specific
+workspace path. Both pipelines use serverless; the quality Job's test and gate tasks use
+the pinned pytest/DQX environment. A SQL warehouse ID is not required.
+
+Deployment commands from the repository root:
+
+```bash
+cd lab7
+databricks bundle validate --strict -t azure_trial_2 --profile azure_trial_2
+databricks bundle deploy -t azure_trial_2 --profile azure_trial_2
+```
+
+Deployment creates/updates two Jobs (`lab7_setup_job`, `lab7_quality_job`) and two pipelines
+(`lab7_quality_pipeline`, `lab7_fail_demo`), and uploads the notebooks, tests and the shared
+Lab 5/6 transformation modules. Deployment does not run the Jobs or pipelines.
+
+For eventual execution, the workspace must already contain the Lab 5/6 data in
+`dbr_dev.ivanrazumovskyi_lab5` and `dbr_dev.ivanrazumovskyi_lab6`. Lab 7 reads Bronze,
+the pinned Silver history, Gold facts/dimensions/aggregates, SiteMatrix and the Lab 6
+operational tables. The execution identity needs read access to these sources and
+permission to create/use the isolated `dbr_dev.ivanrazumovskyi_lab7` schema and its tables.
+The source Delta history referenced by `lab6.source_version` must still be available.
+
+Table and constraint provisioning belongs to the separate setup Job; deployment alone
+does not create these data tables. Any later execution starts with setup, followed by
+the quality Job. The expected-failure pipeline is a separate, manual demonstration.
+Validation, deployment and execution in `azure_trial_2` were explicitly authorized
+for the agent. The separate `azure_dev` target remains deployment-only by the owner.
+
+### Verified Azure trial 2 run
+
+The [setup run](https://adb-7405618361895520.0.azuredatabricks.net/jobs/226266504879911/runs/613102026727399)
+and [full quality run](https://adb-7405618361895520.0.azuredatabricks.net/jobs/581172352017941/runs/855420233105391)
+succeeded on 2026-10-09. The quality run passed all 63 server-side tests and 62 mandatory
+DQ checks; the remaining check warns about the age of the historical source.
+Lab 5 Bronze version 8 contains 6,116 rows, reconciled to 6,116 Silver and Fact rows,
+with no duplicates or real quarantine. All four invalid writes were rejected;
+six synthetic rejects are stored separately in `wiki_quarantine_demo`.
+Local evidence: `evidence/azure_trial_2_setup.json` and `evidence/azure_trial_2_quality.json`.
 
 ## CI
 

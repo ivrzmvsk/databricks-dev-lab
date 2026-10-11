@@ -41,6 +41,22 @@ targets:
               environment_key: tests
             - task_key: constraints_and_gate
               environment_key: tests
+  azure_trial_2:
+    mode: development
+    workspace:
+      profile: azure_trial_2
+    presets:
+      trigger_pause_status: PAUSED
+    variables:
+      catalog: dbr_dev
+    resources:
+      jobs:
+        lab7_quality_job:
+          tasks:
+            - task_key: unit_tests
+              environment_key: tests
+            - task_key: constraints_and_gate
+              environment_key: tests
   azure_dev:
     mode: development
     workspace:
