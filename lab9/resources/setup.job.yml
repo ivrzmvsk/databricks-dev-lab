@@ -1,0 +1,15 @@
+resources:
+  jobs:
+    setup_job:
+      name: lab9-wikipedia-setup-${bundle.target}
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      queue:
+        enabled: false
+      parameters: ${var.wikipedia_job_parameters}
+      tasks:
+        - task_key: setup
+          max_retries: 0
+          timeout_seconds: 1200
+          notebook_task:
+            notebook_path: ../../lab8/notebooks/setup.py

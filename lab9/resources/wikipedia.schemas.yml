@@ -1,0 +1,10 @@
+resources:
+  schemas:
+    silver_schema:
+      name: ${var.silver_schema}
+      catalog_name: ${var.catalog}
+      comment: Lab 9 isolated Wikipedia Bronze/Silver/quarantine
+    gold_schema:
+      name: ${var.gold_schema}
+      catalog_name: ${var.catalog}
+      comment: Lab 9 isolated Wikimedia Gold and operational checks

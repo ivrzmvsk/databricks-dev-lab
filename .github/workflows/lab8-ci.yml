@@ -40,7 +40,9 @@ jobs:
           distribution: temurin
           java-version: '17'
       - run: python -m pip install -r lab8/requirements-ci.txt
-      - uses: databricks/setup-cli@main
+      - name: Lint Lab 8 Python
+        run: python -m ruff check lab8
+      - uses: databricks/setup-cli@9b64c94a6d2b2e830592d80e9f14c26d32b42ad7
         with:
           version: '1.10.0'
       - run: python lab8/tools/check_bundle.py
@@ -65,7 +67,7 @@ jobs:
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEV_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - uses: databricks/setup-cli@main
+      - uses: databricks/setup-cli@9b64c94a6d2b2e830592d80e9f14c26d32b42ad7
         with:
           version: '1.10.0'
       - name: Configure personal DEV profile (host only)
@@ -98,7 +100,7 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v4
-      - uses: databricks/setup-cli@main
+      - uses: databricks/setup-cli@9b64c94a6d2b2e830592d80e9f14c26d32b42ad7
         with:
           version: '1.10.0'
       - name: Install bundle configuration reader

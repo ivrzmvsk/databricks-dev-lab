@@ -4,6 +4,7 @@ bundle:
   engine: direct
 include:
 - resources/*.yml
+- config/*.yml
 variables:
   prod_workspace_root:
     default: /Workspace/Users/ivanrazumovskyi@softserve.academy/.bundle/${bundle.name}/prod

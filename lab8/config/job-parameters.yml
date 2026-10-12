@@ -1,0 +1,25 @@
+# Shared notebook parameter contract for Labs 8 and 9.
+variables:
+  wikipedia_job_parameters:
+    type: complex
+    default:
+      - name: catalog
+        default: ${var.catalog}
+      - name: schema
+        default: ${resources.schemas.gold_schema.name}
+      - name: source_schema
+        default: ${resources.schemas.silver_schema.name}
+      - name: source_code_path
+        default: ${workspace.file_path}/lab6/src
+      - name: code_root
+        default: ${workspace.file_path}
+      - name: metadata_path
+        default: /Volumes/${var.catalog}/${resources.schemas.gold_schema.name}/lab8_assets/metadata/wikimedia.json
+      - name: refresh_reference
+        default: 'false'
+      - name: reader_principal
+        default: ${var.reader_principal}
+      - name: release_commit
+        default: local
+      - name: run_id
+        default: '{{job.run_id}}'

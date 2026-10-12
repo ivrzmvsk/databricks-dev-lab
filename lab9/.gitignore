@@ -1,0 +1,6 @@
+.state/
+reports/
+build/
+dist/
+AGENTS.md
+CLAUDE.md

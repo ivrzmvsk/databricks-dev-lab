@@ -1,0 +1,112 @@
+name: Lab 9 Wikipedia API automation
+
+on:
+  pull_request:
+    branches: [main]
+    paths: &paths
+      - 'lab9/**'
+      - 'lab5/src/**'
+      - 'lab6/src/**'
+      - 'lab8/notebooks/**'
+      - 'lab8/src/**'
+      - 'lab8/pipeline/**'
+      - 'lab8/assets/**'
+      - 'lab8/config/**'
+      - 'lab8/sql/migrations/**'
+      - 'lab8/tools/check_bundle.py'
+      - '.github/workflows/lab8-ci.yml'
+      - '.github/workflows/lab9-ci.yml'
+      # Documentation and saved run evidence do not require tests or deployment.
+      - '!lab9/**/*.md'
+      - '!lab9/evidence/**'
+  push:
+    branches: [main]
+    paths: *paths
+  workflow_dispatch:
+    inputs:
+      deployment_target:
+        description: Databricks target (trial 2 is PROD; personal allows branch testing)
+        type: choice
+        default: azure_trial_2
+        options: [azure_trial_2, personal]
+      operation:
+        description: Operation (run deploys the selected revision before full E2E)
+        type: choice
+        default: run
+        options: [validate, deploy, run, pipeline, submit-notebook]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: lab9/requirements-dev.txt
+      - run: python -m pip install -r lab9/requirements-dev.txt
+      - run: python -m ruff check lab9
+      - uses: databricks/setup-cli@9b64c94a6d2b2e830592d80e9f14c26d32b42ad7
+        with:
+          version: '1.10.0'
+      - run: python lab9/tools/check_bundle.py
+      - run: python -m pytest -c lab9/pyproject.toml lab9/tests --junitxml=lab9/reports/tests.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lab9-tests
+          path: lab9/reports/tests.xml
+
+  automation:
+    needs: tests
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' &&
+       (inputs.deployment_target == 'personal' || github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    environment: ${{ (github.event_name == 'push' || inputs.deployment_target == 'azure_trial_2') && 'lab8-prod' || 'lab9-personal' }}
+    concurrency:
+      group: lab9-${{ github.event_name == 'push' && 'azure_trial_2' || inputs.deployment_target }}-automation
+      cancel-in-progress: false
+    env:
+      LAB9_TARGET: ${{ github.event_name == 'push' && 'azure_trial_2' || inputs.deployment_target }}
+      DATABRICKS_HOST: ${{ (github.event_name == 'push' || inputs.deployment_target == 'azure_trial_2') && 'https://adb-7405618361895520.0.azuredatabricks.net' || 'https://dbc-ab9a5afe-c151.cloud.databricks.com' }}
+      DATABRICKS_TOKEN: ${{ secrets[(github.event_name == 'push' || inputs.deployment_target == 'azure_trial_2') && 'DATABRICKS_TOKEN' || 'DATABRICKS_DEV_TOKEN'] }}
+      DATABRICKS_AUTH_TYPE: pat
+      PYTHONPATH: lab9/src
+      LAB9_OPERATION: ${{ github.event_name == 'push' && 'run' || inputs.operation }}
+      RELEASE_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r lab9/requirements-dev.txt
+      - uses: databricks/setup-cli@9b64c94a6d2b2e830592d80e9f14c26d32b42ad7
+        with:
+          version: '1.10.0'
+      - name: Validate or deploy selected resources
+        if: env.LAB9_OPERATION == 'validate' || env.LAB9_OPERATION == 'deploy'
+        run: python -m lab9 --target "$LAB9_TARGET" "$LAB9_OPERATION"
+      - name: Deploy the selected revision before full orchestration
+        if: env.LAB9_OPERATION == 'run'
+        run: python -m lab9 --target "$LAB9_TARGET" deploy
+      - name: Discover deployed resources for individual operations
+        if: env.LAB9_OPERATION == 'pipeline' || env.LAB9_OPERATION == 'submit-notebook'
+        run: python -m lab9 --target "$LAB9_TARGET" inventory
+      - name: Run automation and wait for the result
+        if: env.LAB9_OPERATION != 'validate' && env.LAB9_OPERATION != 'deploy'
+        run: python -m lab9 --target "$LAB9_TARGET" "$LAB9_OPERATION" --timeout 3600 --commit "$RELEASE_COMMIT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lab9-${{ env.LAB9_TARGET }}-evidence
+          path: |
+            lab9/.state/${{ env.LAB9_TARGET }}-inventory.json
+            lab9/reports/*.json
