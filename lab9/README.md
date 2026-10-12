@@ -127,12 +127,11 @@ The current workflow has been checked locally; it has not yet been pushed or run
 Job parameters are defined once in `lab8/config/job-parameters.yml` and reused by the
 Lab 8 promotion Job and both Lab 9 Jobs. Reports now use `format_version: 3`:
 `stages[].outputs[task_key].result` contains the parsed notebook result, while `error`
-and `trace` remain separate. Existing checked-in E2E evidence retains its original format.
+and `trace` remain separate.
 The current contract is defined in [`schemas/report-v3.schema.json`](schemas/report-v3.schema.json)
 and checked by tests. It rejects top-level `compute` and `classic_cluster_created` fields.
-Historical v1/v2 evidence remains unchanged; its compute labels were configured assumptions,
-not API measurements, and must not be used as proof of compute type. The v2 schema is kept
-only for validating the historical v2 evidence.
+Run evidence is optional and is not required by CI tests. Tests validate generated v3
+reports without reading locally saved run evidence.
 Both Ctrl+C and SIGTERM request cancellation and save a `CANCELED` report; forced process
 termination can prevent cleanup from completing.
 

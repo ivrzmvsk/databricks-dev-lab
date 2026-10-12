@@ -37,13 +37,6 @@ def test_report_lifecycle_matches_versioned_schema(tmp_path, status):
     assert not report.path.with_suffix(".json.tmp").exists()
 
 
-def test_saved_v2_evidence_matches_schema():
-    legacy_schema = json.loads((ROOT / "schemas/report-v2.schema.json").read_text())
-    Draft202012Validator(legacy_schema, format_checker=FormatChecker()).validate(
-        json.loads((ROOT / "evidence/review-serverless-notebook.json").read_text())
-    )
-
-
 @pytest.mark.parametrize(
     "field,value", [("compute", "serverless"), ("classic_cluster_created", False)]
 )
