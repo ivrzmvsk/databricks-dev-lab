@@ -1,0 +1,58 @@
+{
+  "event_counts": [
+    {
+      "_change_type": "delete",
+      "events": "1"
+    },
+    {
+      "_change_type": "insert",
+      "events": "44"
+    },
+    {
+      "_change_type": "update_postimage",
+      "events": "3"
+    },
+    {
+      "_change_type": "update_preimage",
+      "events": "3"
+    }
+  ],
+  "enwiki_history": [
+    {
+      "wiki_id": "enwiki",
+      "owner_id": "4",
+      "status": "active",
+      "updated_at": "2026-10-12T00:00:00.000Z",
+      "source_commit_version": "0",
+      "valid_to_version": "2",
+      "is_current": "false"
+    },
+    {
+      "wiki_id": "enwiki",
+      "owner_id": "5",
+      "status": "maintenance",
+      "updated_at": "2026-10-13T00:00:00.000Z",
+      "source_commit_version": "2",
+      "valid_to_version": "4",
+      "is_current": "false"
+    },
+    {
+      "wiki_id": "enwiki",
+      "owner_id": "2",
+      "status": "active",
+      "updated_at": "2026-10-14T00:00:00.000Z",
+      "source_commit_version": "4",
+      "valid_to_version": "5",
+      "is_current": "false"
+    },
+    {
+      "wiki_id": "enwiki",
+      "owner_id": "3",
+      "status": "active",
+      "updated_at": "2026-10-11T00:00:00.000Z",
+      "source_commit_version": "5",
+      "valid_to_version": null,
+      "is_current": "true"
+    }
+  ]
+}

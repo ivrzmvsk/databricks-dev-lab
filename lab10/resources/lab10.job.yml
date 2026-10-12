@@ -1,0 +1,39 @@
+resources:
+  jobs:
+    lab10_job:
+      name: lab10-wikipedia-federation-cdc-${bundle.target}
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      queue:
+        enabled: false
+      parameters:
+        - name: code_root
+          default: ${workspace.file_path}
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: foreign_catalog
+          default: ${var.foreign_catalog}
+        - name: gold_schema
+          default: ${var.gold_schema}
+      tasks:
+        - task_key: setup
+          max_retries: 0
+          timeout_seconds: 1200
+          notebook_task:
+            notebook_path: ../notebooks/00_setup.py
+        - task_key: federation
+          depends_on:
+            - task_key: setup
+          max_retries: 0
+          timeout_seconds: 1200
+          notebook_task:
+            notebook_path: ../notebooks/01_federation.py
+        - task_key: cdc
+          depends_on:
+            - task_key: federation
+          max_retries: 0
+          timeout_seconds: 1800
+          notebook_task:
+            notebook_path: ../notebooks/02_cdc.py

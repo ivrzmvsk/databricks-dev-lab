@@ -1,0 +1,408 @@
+[
+  {
+    "environment": "azure_trial_2",
+    "run_id": 536972988172172,
+    "url": "https://adb-7405618361895520.0.azuredatabricks.net/?o=7405618361895520#job/67339283688658/run/536972988172172",
+    "state": {
+      "life_cycle_state": "TERMINATED",
+      "result_state": "SUCCESS",
+      "state_message": "",
+      "user_cancelled_or_timedout": false
+    },
+    "tasks": [
+      {
+        "task": "setup",
+        "run_id": 327047024861404,
+        "state": {
+          "life_cycle_state": "TERMINATED",
+          "result_state": "SUCCESS",
+          "state_message": "",
+          "user_cancelled_or_timedout": false
+        },
+        "output": {
+          "baseline_projects": 55,
+          "checkpoint": 0
+        }
+      },
+      {
+        "task": "federation",
+        "run_id": 584650784610922,
+        "state": {
+          "life_cycle_state": "TERMINATED",
+          "result_state": "SUCCESS",
+          "state_message": "",
+          "user_cancelled_or_timedout": false
+        },
+        "output": {
+          "snapshot_comparison": {
+            "foreign_only_rows": 0,
+            "snapshot_only_rows": 0,
+            "matches_snapshot": true
+          },
+          "aggregates": {
+            "foreign": [
+              {
+                "status": "active",
+                "projects": 55
+              }
+            ],
+            "delta": [
+              {
+                "status": "active",
+                "projects": 55
+              }
+            ]
+          },
+          "fact_rows": 300,
+          "joined_rows": 300,
+          "sample": [
+            {
+              "wiki_id": "wikidatawiki",
+              "language_name": "Multilingual / special",
+              "team_name": "Lab Europe",
+              "edits": 102
+            },
+            {
+              "wiki_id": "commonswiki",
+              "language_name": "Multilingual / special",
+              "team_name": "Lab Community Support",
+              "edits": 81
+            },
+            {
+              "wiki_id": "enwiki",
+              "language_name": "English",
+              "team_name": "Lab Global Services",
+              "edits": 19
+            },
+            {
+              "wiki_id": "ruwiki",
+              "language_name": "Russian",
+              "team_name": "Lab Global Services",
+              "edits": 15
+            },
+            {
+              "wiki_id": "zhwiki",
+              "language_name": "Chinese",
+              "team_name": "Lab Americas",
+              "edits": 11
+            },
+            {
+              "wiki_id": "frwiki",
+              "language_name": "French",
+              "team_name": "Lab Community Support",
+              "edits": 8
+            },
+            {
+              "wiki_id": "itwiki",
+              "language_name": "Italian",
+              "team_name": "Lab Asia Pacific",
+              "edits": 8
+            },
+            {
+              "wiki_id": "eswiki",
+              "language_name": "Spanish",
+              "team_name": "Lab Europe",
+              "edits": 5
+            },
+            {
+              "wiki_id": "astwiki",
+              "language_name": "Asturian",
+              "team_name": "Lab Asia Pacific",
+              "edits": 5
+            },
+            {
+              "wiki_id": "plwiki",
+              "language_name": "Polish",
+              "team_name": "Lab Europe",
+              "edits": 4
+            }
+          ],
+          "timings": [
+            {
+              "path": "foreign",
+              "iteration": 1,
+              "elapsed_seconds": 2.768
+            },
+            {
+              "path": "delta",
+              "iteration": 1,
+              "elapsed_seconds": 0.754
+            },
+            {
+              "path": "foreign",
+              "iteration": 2,
+              "elapsed_seconds": 2.675
+            },
+            {
+              "path": "delta",
+              "iteration": 2,
+              "elapsed_seconds": 0.674
+            },
+            {
+              "path": "foreign",
+              "iteration": 3,
+              "elapsed_seconds": 2.635
+            },
+            {
+              "path": "delta",
+              "iteration": 3,
+              "elapsed_seconds": 0.833
+            }
+          ],
+          "timing_note": "One warm-up per path excluded; paths interleaved. Client wall time includes network/polling and result caches; Neon scale-to-zero can affect cold queries. Aggregates may differ when the operational source has changed."
+        }
+      },
+      {
+        "task": "cdc",
+        "run_id": 1120518732005521,
+        "state": {
+          "life_cycle_state": "TERMINATED",
+          "result_state": "SUCCESS",
+          "state_message": "",
+          "user_cancelled_or_timedout": false
+        },
+        "output": {
+          "batch1": {
+            "batch": "batch1",
+            "status": "APPLIED"
+          },
+          "sync1": {
+            "status": "APPLIED",
+            "from_version": 1,
+            "version": 3,
+            "current_rows": 55,
+            "history_rows": 57,
+            "audit_rows": 59
+          },
+          "batch2": {
+            "batch": "batch2",
+            "status": "APPLIED"
+          },
+          "sync2": {
+            "status": "APPLIED",
+            "from_version": 4,
+            "version": 5,
+            "current_rows": 55,
+            "history_rows": 59,
+            "audit_rows": 63
+          },
+          "rerun": {
+            "status": "NO_NEW_CHANGES",
+            "version": 5,
+            "current_rows": 55,
+            "history_rows": 59,
+            "audit_rows": 63
+          },
+          "validation": {
+            "version": 5,
+            "current_rows": 55,
+            "history_rows": 59,
+            "audit_rows": 63
+          }
+        }
+      }
+    ]
+  },
+  {
+    "environment": "azure_trial_2",
+    "run_id": 478254687641931,
+    "url": "https://adb-7405618361895520.0.azuredatabricks.net/?o=7405618361895520#job/67339283688658/run/478254687641931",
+    "state": {
+      "life_cycle_state": "TERMINATED",
+      "result_state": "SUCCESS",
+      "state_message": "",
+      "user_cancelled_or_timedout": false
+    },
+    "tasks": [
+      {
+        "task": "setup",
+        "run_id": 765853966337621,
+        "state": {
+          "life_cycle_state": "TERMINATED",
+          "result_state": "SUCCESS",
+          "state_message": "",
+          "user_cancelled_or_timedout": false
+        },
+        "output": {
+          "baseline_projects": 55,
+          "checkpoint": 5
+        }
+      },
+      {
+        "task": "federation",
+        "run_id": 268849977394554,
+        "state": {
+          "life_cycle_state": "TERMINATED",
+          "result_state": "SUCCESS",
+          "state_message": "",
+          "user_cancelled_or_timedout": false
+        },
+        "output": {
+          "snapshot_comparison": {
+            "foreign_only_rows": 0,
+            "snapshot_only_rows": 0,
+            "matches_snapshot": true
+          },
+          "aggregates": {
+            "foreign": [
+              {
+                "status": "active",
+                "projects": 55
+              }
+            ],
+            "delta": [
+              {
+                "status": "active",
+                "projects": 55
+              }
+            ]
+          },
+          "fact_rows": 300,
+          "joined_rows": 300,
+          "sample": [
+            {
+              "wiki_id": "wikidatawiki",
+              "language_name": "Multilingual / special",
+              "team_name": "Lab Europe",
+              "edits": 102
+            },
+            {
+              "wiki_id": "commonswiki",
+              "language_name": "Multilingual / special",
+              "team_name": "Lab Community Support",
+              "edits": 81
+            },
+            {
+              "wiki_id": "enwiki",
+              "language_name": "English",
+              "team_name": "Lab Global Services",
+              "edits": 19
+            },
+            {
+              "wiki_id": "ruwiki",
+              "language_name": "Russian",
+              "team_name": "Lab Global Services",
+              "edits": 15
+            },
+            {
+              "wiki_id": "zhwiki",
+              "language_name": "Chinese",
+              "team_name": "Lab Americas",
+              "edits": 11
+            },
+            {
+              "wiki_id": "frwiki",
+              "language_name": "French",
+              "team_name": "Lab Community Support",
+              "edits": 8
+            },
+            {
+              "wiki_id": "itwiki",
+              "language_name": "Italian",
+              "team_name": "Lab Asia Pacific",
+              "edits": 8
+            },
+            {
+              "wiki_id": "eswiki",
+              "language_name": "Spanish",
+              "team_name": "Lab Europe",
+              "edits": 5
+            },
+            {
+              "wiki_id": "astwiki",
+              "language_name": "Asturian",
+              "team_name": "Lab Asia Pacific",
+              "edits": 5
+            },
+            {
+              "wiki_id": "plwiki",
+              "language_name": "Polish",
+              "team_name": "Lab Europe",
+              "edits": 4
+            }
+          ],
+          "timings": [
+            {
+              "path": "foreign",
+              "iteration": 1,
+              "elapsed_seconds": 2.719
+            },
+            {
+              "path": "delta",
+              "iteration": 1,
+              "elapsed_seconds": 0.691
+            },
+            {
+              "path": "foreign",
+              "iteration": 2,
+              "elapsed_seconds": 2.721
+            },
+            {
+              "path": "delta",
+              "iteration": 2,
+              "elapsed_seconds": 0.724
+            },
+            {
+              "path": "foreign",
+              "iteration": 3,
+              "elapsed_seconds": 2.704
+            },
+            {
+              "path": "delta",
+              "iteration": 3,
+              "elapsed_seconds": 0.742
+            }
+          ],
+          "timing_note": "One warm-up per path excluded; paths interleaved. Client wall time includes network/polling and result caches; Neon scale-to-zero can affect cold queries. Aggregates may differ when the operational source has changed."
+        }
+      },
+      {
+        "task": "cdc",
+        "run_id": 704323776337756,
+        "state": {
+          "life_cycle_state": "TERMINATED",
+          "result_state": "SUCCESS",
+          "state_message": "",
+          "user_cancelled_or_timedout": false
+        },
+        "output": {
+          "batch1": {
+            "batch": "batch1",
+            "status": "ALREADY_APPLIED"
+          },
+          "sync1": {
+            "status": "NO_NEW_CHANGES",
+            "version": 5,
+            "current_rows": 55,
+            "history_rows": 59,
+            "audit_rows": 63
+          },
+          "batch2": {
+            "batch": "batch2",
+            "status": "ALREADY_APPLIED"
+          },
+          "sync2": {
+            "status": "NO_NEW_CHANGES",
+            "version": 5,
+            "current_rows": 55,
+            "history_rows": 59,
+            "audit_rows": 63
+          },
+          "rerun": {
+            "status": "NO_NEW_CHANGES",
+            "version": 5,
+            "current_rows": 55,
+            "history_rows": 59,
+            "audit_rows": 63
+          },
+          "validation": {
+            "version": 5,
+            "current_rows": 55,
+            "history_rows": 59,
+            "audit_rows": 63
+          }
+        }
+      }
+    ]
+  }
+]

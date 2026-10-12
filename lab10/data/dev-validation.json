@@ -1,0 +1,79 @@
+{
+  "environment": "personal-env",
+  "started_at": "2026-10-12T16:06:47.646795+00:00",
+  "finished_at": "2026-10-12T16:13:48.083645+00:00",
+  "status": "PASS",
+  "setup": {
+    "baseline_projects": 43,
+    "checkpoint": 0
+  },
+  "sync1": {
+    "status": "APPLIED",
+    "from_version": 1,
+    "version": 3,
+    "current_rows": 43,
+    "history_rows": 45,
+    "audit_rows": 47
+  },
+  "sync2": {
+    "status": "APPLIED",
+    "from_version": 4,
+    "version": 5,
+    "current_rows": 43,
+    "history_rows": 47,
+    "audit_rows": 51
+  },
+  "rerun": {
+    "status": "NO_NEW_CHANGES",
+    "version": 5,
+    "current_rows": 43,
+    "history_rows": 47,
+    "audit_rows": 51
+  },
+  "validation": {
+    "version": 5,
+    "current_rows": 43,
+    "history_rows": 47,
+    "audit_rows": 51
+  },
+  "failure_recovery": {
+    "checkpoint_unchanged": true
+  },
+  "federation": {
+    "fact_rows": 653,
+    "joined_rows": 653,
+    "timings": [
+      {
+        "path": "foreign",
+        "iteration": 1,
+        "elapsed_seconds": 1.579
+      },
+      {
+        "path": "foreign",
+        "iteration": 2,
+        "elapsed_seconds": 1.181
+      },
+      {
+        "path": "foreign",
+        "iteration": 3,
+        "elapsed_seconds": 1.239
+      },
+      {
+        "path": "delta",
+        "iteration": 1,
+        "elapsed_seconds": 1.343
+      },
+      {
+        "path": "delta",
+        "iteration": 2,
+        "elapsed_seconds": 0.657
+      },
+      {
+        "path": "delta",
+        "iteration": 3,
+        "elapsed_seconds": 0.691
+      }
+    ],
+    "timing_note": "Client wall time includes network/polling; warm caches may affect repeated queries."
+  }
+}

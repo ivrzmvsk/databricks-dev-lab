@@ -1,0 +1,76 @@
+{
+  "checked_at": "2026-10-12T19:07:06.418520+00:00",
+  "environment": "azure_trial_2",
+  "deployment": "PASS",
+  "strict_validation": "PASS",
+  "job_id": 67339283688658,
+  "job_url": "https://adb-7405618361895520.0.azuredatabricks.net/jobs/67339283688658",
+  "runtime": "PASS",
+  "source": {
+    "projects": 55,
+    "owners": 5,
+    "added_project_keys": 12,
+    "reader_role": "lab10_federation_reader_prod",
+    "tls_verified": true,
+    "reader_select_verified": true,
+    "reader_write_privileges": false
+  },
+  "azure_facts": {
+    "table": "dbr_dev.ivanrazumovskyi_lab9_gold.fact_edits",
+    "rows": 300,
+    "wiki_keys": 39
+  },
+  "expected_fresh_cdc_counts": {
+    "current_rows": 55,
+    "history_rows": 59,
+    "audit_rows": 63
+  },
+  "connection": {
+    "name": "ivanrazumovskyi_lab10_pg_catalog",
+    "created_via": "user_ui",
+    "type": "POSTGRESQL",
+    "read_only": true,
+    "credentials_updated_to_dedicated_reader": true
+  },
+  "blocker_history": [
+    {
+      "code": "PERMISSION_DENIED",
+      "operation": "CREATE CONNECTION",
+      "metastore": "metastore_azure_eastus",
+      "principal": "ivanrazumovskyi@softserve.academy",
+      "required_metastore_privileges": [
+        "CREATE CONNECTION",
+        "CREATE CATALOG"
+      ]
+    },
+    {
+      "code": "PERMISSION_DENIED",
+      "operation": "CREATE CATALOG",
+      "metastore": "metastore_azure_eastus",
+      "principal": "ivanrazumovskyi@softserve.academy",
+      "required_metastore_privileges": [
+        "CREATE CATALOG"
+      ]
+    }
+  ],
+  "run_id": 536972988172172,
+  "run_url": "https://adb-7405618361895520.0.azuredatabricks.net/jobs/67339283688658/runs/536972988172172",
+  "foreign_catalog": {
+    "name": "ivanrazumovskyi_lab10_neon_prod",
+    "connection_name": "ivanrazumovskyi_lab10_pg_catalog",
+    "created_via": "user_ui",
+    "accessible_from_trial_2": true,
+    "isolation_mode": "OPEN",
+    "projects_queried": 55,
+    "owners_queried": 5
+  },
+  "rerun_id": 478254687641931,
+  "rerun_url": "https://adb-7405618361895520.0.azuredatabricks.net/jobs/67339283688658/runs/478254687641931",
+  "verified_cdc_counts": {
+    "version": 5,
+    "current_rows": 55,
+    "history_rows": 59,
+    "audit_rows": 63
+  },
+  "rerun": "PASS_NO_NEW_CHANGES"
+}

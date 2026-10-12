@@ -1,0 +1,303 @@
+[
+  {
+    "wiki_id": "afwiki",
+    "language_code": "af",
+    "language_name": "Afrikaans",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "arwiki",
+    "language_code": "ar",
+    "language_name": "Arabic",
+    "project_code": "wiki",
+    "project_name": "ويكيبيديا"
+  },
+  {
+    "wiki_id": "astwiki",
+    "language_code": "ast",
+    "language_name": "Asturian",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "cawiki",
+    "language_code": "ca",
+    "language_name": "Catalan",
+    "project_code": "wiki",
+    "project_name": "Viquipèdia"
+  },
+  {
+    "wiki_id": "commonswiki",
+    "language_code": "und",
+    "language_name": "Multilingual / special",
+    "project_code": "commons",
+    "project_name": "Wikimedia Commons"
+  },
+  {
+    "wiki_id": "cswiki",
+    "language_code": "cs",
+    "language_name": "Czech",
+    "project_code": "wiki",
+    "project_name": "Wikipedie"
+  },
+  {
+    "wiki_id": "dewiki",
+    "language_code": "de",
+    "language_name": "German",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "elwiki",
+    "language_code": "el",
+    "language_name": "Greek",
+    "project_code": "wiki",
+    "project_name": "Βικιπαίδεια"
+  },
+  {
+    "wiki_id": "enwiki",
+    "language_code": "en",
+    "language_name": "English",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "enwiktionary",
+    "language_code": "en",
+    "language_name": "English",
+    "project_code": "wiktionary",
+    "project_name": "Wiktionary"
+  },
+  {
+    "wiki_id": "eswiki",
+    "language_code": "es",
+    "language_name": "Spanish",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "etwiki",
+    "language_code": "et",
+    "language_name": "Estonian",
+    "project_code": "wiki",
+    "project_name": "Vikipeedia"
+  },
+  {
+    "wiki_id": "fawiki",
+    "language_code": "fa",
+    "language_name": "Persian",
+    "project_code": "wiki",
+    "project_name": "ویکی‌پدیا"
+  },
+  {
+    "wiki_id": "fiwiki",
+    "language_code": "fi",
+    "language_name": "Finnish",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "frwiki",
+    "language_code": "fr",
+    "language_name": "French",
+    "project_code": "wiki",
+    "project_name": "Wikipédia"
+  },
+  {
+    "wiki_id": "hewiki",
+    "language_code": "he",
+    "language_name": "Hebrew",
+    "project_code": "wiki",
+    "project_name": "ויקיפדיה"
+  },
+  {
+    "wiki_id": "iawiki",
+    "language_code": "ia",
+    "language_name": "Interlingua",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "itwiki",
+    "language_code": "it",
+    "language_name": "Italian",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "jawiki",
+    "language_code": "ja",
+    "language_name": "Japanese",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "kmwiki",
+    "language_code": "km",
+    "language_name": "Khmer",
+    "project_code": "wiki",
+    "project_name": "វិគីភីឌា"
+  },
+  {
+    "wiki_id": "kowiki",
+    "language_code": "ko",
+    "language_name": "Korean",
+    "project_code": "wiki",
+    "project_name": "위키백과"
+  },
+  {
+    "wiki_id": "kowiktionary",
+    "language_code": "ko",
+    "language_name": "Korean",
+    "project_code": "wiktionary",
+    "project_name": "위키낱말사전"
+  },
+  {
+    "wiki_id": "metawiki",
+    "language_code": "und",
+    "language_name": "Multilingual / special",
+    "project_code": "meta",
+    "project_name": "Meta-Wiki"
+  },
+  {
+    "wiki_id": "mgwiktionary",
+    "language_code": "mg",
+    "language_name": "Malagasy",
+    "project_code": "wiktionary",
+    "project_name": "Wiktionary"
+  },
+  {
+    "wiki_id": "nlwiki",
+    "language_code": "nl",
+    "language_name": "Dutch",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "plwiki",
+    "language_code": "pl",
+    "language_name": "Polish",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "ptwiki",
+    "language_code": "pt",
+    "language_name": "Portuguese",
+    "project_code": "wiki",
+    "project_name": "Wikipédia"
+  },
+  {
+    "wiki_id": "rowiki",
+    "language_code": "ro",
+    "language_name": "Romanian",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "ruwiki",
+    "language_code": "ru",
+    "language_name": "Russian",
+    "project_code": "wiki",
+    "project_name": "Википедия"
+  },
+  {
+    "wiki_id": "ruwikivoyage",
+    "language_code": "ru",
+    "language_name": "Russian",
+    "project_code": "wikivoyage",
+    "project_name": "Wikivoyage"
+  },
+  {
+    "wiki_id": "ruwiktionary",
+    "language_code": "ru",
+    "language_name": "Russian",
+    "project_code": "wiktionary",
+    "project_name": "Викисловарь"
+  },
+  {
+    "wiki_id": "shnwiki",
+    "language_code": "shn",
+    "language_name": "Shan",
+    "project_code": "wiki",
+    "project_name": "ဝီႇၶီႇၽီးတီးယႃး"
+  },
+  {
+    "wiki_id": "specieswiki",
+    "language_code": "und",
+    "language_name": "Multilingual / special",
+    "project_code": "species",
+    "project_name": "Wikispecies"
+  },
+  {
+    "wiki_id": "srwiki",
+    "language_code": "sr",
+    "language_name": "Serbian",
+    "project_code": "wiki",
+    "project_name": "Википедија"
+  },
+  {
+    "wiki_id": "tewiki",
+    "language_code": "te",
+    "language_name": "Telugu",
+    "project_code": "wiki",
+    "project_name": "వికీపీడియా"
+  },
+  {
+    "wiki_id": "tgwiki",
+    "language_code": "tg",
+    "language_name": "Tajik",
+    "project_code": "wiki",
+    "project_name": "Википедиа"
+  },
+  {
+    "wiki_id": "thwiki",
+    "language_code": "th",
+    "language_name": "Thai",
+    "project_code": "wiki",
+    "project_name": "วิกิพีเดีย"
+  },
+  {
+    "wiki_id": "trwiki",
+    "language_code": "tr",
+    "language_name": "Turkish",
+    "project_code": "wiki",
+    "project_name": "Vikipedi"
+  },
+  {
+    "wiki_id": "ukwiki",
+    "language_code": "uk",
+    "language_name": "Ukrainian",
+    "project_code": "wiki",
+    "project_name": "Вікіпедія"
+  },
+  {
+    "wiki_id": "urwiki",
+    "language_code": "ur",
+    "language_name": "Urdu",
+    "project_code": "wiki",
+    "project_name": "ویکیپیڈیا"
+  },
+  {
+    "wiki_id": "wikidatawiki",
+    "language_code": "und",
+    "language_name": "Multilingual / special",
+    "project_code": "wikidata",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "zhwiki",
+    "language_code": "zh",
+    "language_name": "Chinese",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "zhwiktionary",
+    "language_code": "zh",
+    "language_name": "Chinese",
+    "project_code": "wiktionary",
+    "project_name": "Wiktionary"
+  }
+]

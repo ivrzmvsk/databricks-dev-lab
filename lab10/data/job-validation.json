@@ -1,0 +1,198 @@
+[
+  {
+    "run_id": 554233975639233,
+    "url": "https://dbc-ab9a5afe-c151.cloud.databricks.com/?o=7474655630219513#job/111441949712558/run/554233975639233",
+    "state": "SUCCESS",
+    "tasks": [
+      {
+        "task": "setup",
+        "state": "SUCCESS",
+        "output": {
+          "baseline_projects": 43,
+          "checkpoint": 5
+        }
+      },
+      {
+        "task": "cdc",
+        "state": "SUCCESS",
+        "output": {
+          "batch1": {
+            "batch": "batch1",
+            "status": "ALREADY_APPLIED"
+          },
+          "sync1": {
+            "status": "NO_NEW_CHANGES",
+            "version": 5,
+            "current_rows": 43,
+            "history_rows": 47,
+            "audit_rows": 51
+          },
+          "batch2": {
+            "batch": "batch2",
+            "status": "ALREADY_APPLIED"
+          },
+          "sync2": {
+            "status": "NO_NEW_CHANGES",
+            "version": 5,
+            "current_rows": 43,
+            "history_rows": 47,
+            "audit_rows": 51
+          },
+          "rerun": {
+            "status": "NO_NEW_CHANGES",
+            "version": 5,
+            "current_rows": 43,
+            "history_rows": 47,
+            "audit_rows": 51
+          },
+          "validation": {
+            "version": 5,
+            "current_rows": 43,
+            "history_rows": 47,
+            "audit_rows": 51
+          }
+        }
+      },
+      {
+        "task": "federation",
+        "state": "SUCCESS",
+        "output": {
+          "fact_rows": 653,
+          "joined_rows": 653,
+          "timings": [
+            {
+              "path": "foreign",
+              "iteration": 1,
+              "elapsed_seconds": 1.678
+            },
+            {
+              "path": "foreign",
+              "iteration": 2,
+              "elapsed_seconds": 1.352
+            },
+            {
+              "path": "foreign",
+              "iteration": 3,
+              "elapsed_seconds": 1.171
+            },
+            {
+              "path": "delta",
+              "iteration": 1,
+              "elapsed_seconds": 1.056
+            },
+            {
+              "path": "delta",
+              "iteration": 2,
+              "elapsed_seconds": 1.0
+            },
+            {
+              "path": "delta",
+              "iteration": 3,
+              "elapsed_seconds": 0.945
+            }
+          ],
+          "timing_note": "Client wall time includes network/polling; warm caches may affect repeated queries."
+        }
+      }
+    ]
+  },
+  {
+    "run_id": 1036114599242534,
+    "url": "https://dbc-ab9a5afe-c151.cloud.databricks.com/?o=7474655630219513#job/111441949712558/run/1036114599242534",
+    "state": "SUCCESS",
+    "tasks": [
+      {
+        "task": "setup",
+        "state": "SUCCESS",
+        "output": {
+          "baseline_projects": 43,
+          "checkpoint": 0
+        }
+      },
+      {
+        "task": "cdc",
+        "state": "SUCCESS",
+        "output": {
+          "batch1": {
+            "batch": "batch1",
+            "status": "APPLIED"
+          },
+          "sync1": {
+            "status": "APPLIED",
+            "from_version": 1,
+            "version": 3,
+            "current_rows": 43,
+            "history_rows": 45,
+            "audit_rows": 47
+          },
+          "batch2": {
+            "batch": "batch2",
+            "status": "APPLIED"
+          },
+          "sync2": {
+            "status": "APPLIED",
+            "from_version": 4,
+            "version": 5,
+            "current_rows": 43,
+            "history_rows": 47,
+            "audit_rows": 51
+          },
+          "rerun": {
+            "status": "NO_NEW_CHANGES",
+            "version": 5,
+            "current_rows": 43,
+            "history_rows": 47,
+            "audit_rows": 51
+          },
+          "validation": {
+            "version": 5,
+            "current_rows": 43,
+            "history_rows": 47,
+            "audit_rows": 51
+          }
+        }
+      },
+      {
+        "task": "federation",
+        "state": "SUCCESS",
+        "output": {
+          "fact_rows": 653,
+          "joined_rows": 653,
+          "timings": [
+            {
+              "path": "foreign",
+              "iteration": 1,
+              "elapsed_seconds": 1.214
+            },
+            {
+              "path": "foreign",
+              "iteration": 2,
+              "elapsed_seconds": 1.307
+            },
+            {
+              "path": "foreign",
+              "iteration": 3,
+              "elapsed_seconds": 1.165
+            },
+            {
+              "path": "delta",
+              "iteration": 1,
+              "elapsed_seconds": 0.758
+            },
+            {
+              "path": "delta",
+              "iteration": 2,
+              "elapsed_seconds": 0.754
+            },
+            {
+              "path": "delta",
+              "iteration": 3,
+              "elapsed_seconds": 0.918
+            }
+          ],
+          "timing_note": "Client wall time includes network/polling; warm caches may affect repeated queries."
+        }
+      }
+    ]
+  }
+]
