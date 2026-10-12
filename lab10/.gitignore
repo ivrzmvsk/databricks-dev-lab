@@ -1,0 +1,4 @@
+.neon
+.env
+.env.*
+reports/

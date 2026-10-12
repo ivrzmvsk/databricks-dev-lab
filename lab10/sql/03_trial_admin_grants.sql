@@ -1,0 +1,11 @@
+-- Historical troubleshooting reference; no grants were executed by this lab.
+-- The user created the connection and foreign catalog through the UI.
+-- Both are now usable from azure_trial_2; these creation grants are not needed
+-- to run the deployed Job against existing objects.
+--
+-- Optional examples for an administrator provisioning future objects:
+-- GRANT CREATE CONNECTION ON METASTORE TO `ivanrazumovskyi@softserve.academy`;
+-- GRANT CREATE CATALOG ON METASTORE TO `ivanrazumovskyi@softserve.academy`;
+--
+-- Alternatively an administrator can create specific objects and grant only
+-- access to those objects. Avoid granting broad privileges just to run a Job.

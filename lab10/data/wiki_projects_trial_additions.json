@@ -1,0 +1,86 @@
+[
+  {
+    "wiki_id": "azwiki",
+    "language_code": "az",
+    "language_name": "Azerbaijani",
+    "project_code": "wiki",
+    "project_name": "Vikipediya"
+  },
+  {
+    "wiki_id": "bewiki",
+    "language_code": "be",
+    "language_name": "Belarusian",
+    "project_code": "wiki",
+    "project_name": "Вікіпедыя"
+  },
+  {
+    "wiki_id": "cywiki",
+    "language_code": "cy",
+    "language_name": "Welsh",
+    "project_code": "wiki",
+    "project_name": "Wicipedia"
+  },
+  {
+    "wiki_id": "dawiki",
+    "language_code": "da",
+    "language_name": "Danish",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "dewikisource",
+    "language_code": "de",
+    "language_name": "German",
+    "project_code": "wikisource",
+    "project_name": "Wikisource"
+  },
+  {
+    "wiki_id": "enwikivoyage",
+    "language_code": "en",
+    "language_name": "English",
+    "project_code": "wikivoyage",
+    "project_name": "Wikivoyage"
+  },
+  {
+    "wiki_id": "eowiki",
+    "language_code": "eo",
+    "language_name": "Esperanto",
+    "project_code": "wiki",
+    "project_name": "Vikipedio"
+  },
+  {
+    "wiki_id": "eswikibooks",
+    "language_code": "es",
+    "language_name": "Spanish",
+    "project_code": "wikibooks",
+    "project_name": "Wikilibros"
+  },
+  {
+    "wiki_id": "idwikisource",
+    "language_code": "id",
+    "language_name": "Indonesian",
+    "project_code": "wikisource",
+    "project_name": "Wikisumber"
+  },
+  {
+    "wiki_id": "nlwiktionary",
+    "language_code": "nl",
+    "language_name": "Dutch",
+    "project_code": "wiktionary",
+    "project_name": "WikiWoordenboek"
+  },
+  {
+    "wiki_id": "svwiki",
+    "language_code": "sv",
+    "language_name": "Swedish",
+    "project_code": "wiki",
+    "project_name": "Wikipedia"
+  },
+  {
+    "wiki_id": "svwiktionary",
+    "language_code": "sv",
+    "language_name": "Swedish",
+    "project_code": "wiktionary",
+    "project_name": "Wiktionary"
+  }
+]
