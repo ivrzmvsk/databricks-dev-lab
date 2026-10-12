@@ -1,0 +1,50 @@
+resources:
+  jobs:
+    gold_job:
+      name: lab9-wikipedia-gold-${bundle.target}
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      queue:
+        enabled: false
+      parameters: ${var.wikipedia_job_parameters}
+      tasks:
+        - task_key: reference
+          max_retries: 0
+          timeout_seconds: 1200
+          notebook_task:
+            notebook_path: ../../lab8/notebooks/reference.py
+        - task_key: gold
+          max_retries: 0
+          timeout_seconds: 1200
+          depends_on:
+            - task_key: reference
+          notebook_task:
+            notebook_path: ../../lab8/notebooks/gold.py
+        - task_key: governance
+          max_retries: 0
+          timeout_seconds: 1200
+          depends_on:
+            - task_key: gold
+          notebook_task:
+            notebook_path: ../../lab8/notebooks/governance.py
+        - task_key: validation
+          max_retries: 0
+          timeout_seconds: 1200
+          depends_on:
+            - task_key: governance
+          notebook_task:
+            notebook_path: ../../lab8/notebooks/validation.py
+        - task_key: volume
+          max_retries: 0
+          timeout_seconds: 1200
+          depends_on:
+            - task_key: validation
+          notebook_task:
+            notebook_path: ../../lab8/notebooks/volume.py
+        - task_key: release_gate
+          max_retries: 0
+          timeout_seconds: 1200
+          depends_on:
+            - task_key: volume
+          notebook_task:
+            notebook_path: ../../lab8/notebooks/release_gate.py

@@ -3,6 +3,7 @@
 This complements, rather than replaces, authenticated bundle validate in CI.
 """
 import ast
+import glob
 import json
 import subprocess
 from pathlib import Path
@@ -11,6 +12,23 @@ import jsonschema
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_bundle_config(root):
+    """Merge shared variable and resource includes for offline schema checks."""
+    config = yaml.safe_load((root / 'databricks.yml').read_text())
+
+    def merge(target, source):
+        for key, value in source.items():
+            if isinstance(value, dict) and isinstance(target.get(key), dict):
+                merge(target[key], value)
+            else:
+                target[key] = value
+
+    for pattern in config.get('include', []):
+        for path in sorted(glob.glob(str(root / pattern))):
+            merge(config, yaml.safe_load(Path(path).read_text()))
+    return config
 
 
 def python_patterns(value):
@@ -30,11 +48,7 @@ def python_patterns(value):
 def main():
     schema = json.loads(subprocess.check_output(['databricks', 'bundle', 'schema'], text=True))
     python_patterns(schema)
-    config = yaml.safe_load((ROOT / 'databricks.yml').read_text())
-    for path in sorted((ROOT / 'resources').glob('*.yml')):
-        resource = yaml.safe_load(path.read_text())
-        for kind, values in resource['resources'].items():
-            config.setdefault('resources', {}).setdefault(kind, {}).update(values)
+    config = load_bundle_config(ROOT)
     errors = list(jsonschema.Draft202012Validator(schema).iter_errors(config))
     if errors:
         for error in errors:

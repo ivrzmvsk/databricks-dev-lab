@@ -9,27 +9,7 @@ resources:
       timeout_seconds: 7200
       queue:
         enabled: true
-      parameters:
-      - name: catalog
-        default: ${var.catalog}
-      - name: schema
-        default: ${resources.schemas.gold_schema.name}
-      - name: source_schema
-        default: ${resources.schemas.silver_schema.name}
-      - name: source_code_path
-        default: ${workspace.file_path}/lab6/src
-      - name: code_root
-        default: ${workspace.file_path}
-      - name: metadata_path
-        default: /Volumes/${var.catalog}/${resources.schemas.gold_schema.name}/lab8_assets/metadata/wikimedia.json
-      - name: refresh_reference
-        default: 'false'
-      - name: reader_principal
-        default: ${var.reader_principal}
-      - name: release_commit
-        default: local
-      - name: run_id
-        default: '{{job.run_id}}'
+      parameters: ${var.wikipedia_job_parameters}
       tasks:
       - task_key: setup
         max_retries: 0

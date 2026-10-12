@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lab 9 automation report v3",
+  "type": "object",
+  "required": [
+    "format_version",
+    "operation_id",
+    "host",
+    "started_at",
+    "status",
+    "stages",
+    "duration_seconds"
+  ],
+  "properties": {
+    "format_version": {
+      "const": 3
+    },
+    "operation_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    "host": {
+      "type": "string",
+      "format": "uri"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "duration_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "command": {
+      "enum": [
+        "run",
+        "pipeline",
+        "submit-notebook"
+      ]
+    },
+    "identity": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "RUNNING",
+        "SUCCESS",
+        "FAILED",
+        "CANCELED"
+      ]
+    },
+    "error": {
+      "type": "string"
+    },
+    "cleanup": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "job",
+              "pipeline",
+              "submitted_notebook"
+            ]
+          },
+          "run_id": {
+            "type": "integer"
+          },
+          "update_id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "outputs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "result": {},
+                "error": {
+                  "type": "string"
+                },
+                "trace": {
+                  "type": "string"
+                },
+                "output_error": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    },
+    "target": {
+      "enum": [
+        "personal",
+        "azure_trial_2"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "SUCCESS",
+              "FAILED",
+              "CANCELED"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "finished_at",
+          "command"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "FAILED",
+              "CANCELED"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "error",
+          "cleanup"
+        ]
+      }
+    }
+  ],
+  "additionalProperties": false
+}
