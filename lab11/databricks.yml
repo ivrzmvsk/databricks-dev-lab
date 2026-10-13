@@ -1,0 +1,50 @@
+bundle:
+  name: lab11_wikimedia_zerobus
+  databricks_cli_version: '>= 1.10.0'
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    default: workspace
+  schema:
+    default: ivanrazumovskyi_lab11_zerobus
+
+workspace:
+  root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+sync:
+  include:
+    - src/**
+    - notebooks/**
+  exclude:
+    - .env*
+    - .state/**
+    - .venv/**
+    - tests/**
+    - tools/**
+
+targets:
+  personal:
+    default: true
+    mode: development
+    workspace:
+      host: https://dbc-ab9a5afe-c151.cloud.databricks.com
+      profile: personal-env
+    presets:
+      jobs_max_concurrent_runs: 1
+
+  azure_trial_2:
+    mode: production
+    workspace:
+      host: https://adb-7405618361895520.0.azuredatabricks.net
+      profile: azure_trial_2
+      root_path: /Workspace/Users/ivanrazumovskyi@softserve.academy/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: dbr_dev
+    run_as:
+      user_name: ivanrazumovskyi@softserve.academy
+    permissions:
+      - user_name: ivanrazumovskyi@softserve.academy
+        level: CAN_MANAGE

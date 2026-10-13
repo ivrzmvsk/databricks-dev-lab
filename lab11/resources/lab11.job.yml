@@ -1,0 +1,21 @@
+resources:
+  jobs:
+    lab11_process:
+      name: lab11-zerobus-process-${bundle.target}
+      max_concurrent_runs: 1
+      timeout_seconds: 1200
+      queue:
+        enabled: false
+      parameters:
+        - name: sql_root
+          default: ${workspace.file_path}/src/lab11/sql
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+      tasks:
+        - task_key: process_and_validate
+          max_retries: 0
+          timeout_seconds: 1200
+          notebook_task:
+            notebook_path: ../notebooks/01_process.py
