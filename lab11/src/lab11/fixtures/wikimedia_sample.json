@@ -1,0 +1,39 @@
+{
+  "run_id": "recorded-wikimedia-fixture-v1",
+  "source": "https://stream.wikimedia.org/v2/stream/recentchange",
+  "records": [
+    {
+      "event_id": "b11b2e54-1b14-433a-aae8-88af7ca4e608",
+      "wiki": "enwiktionary",
+      "page_title": "ómægod",
+      "user_name": "FenaBot",
+      "event_type": "edit",
+      "bytes_changed": 197,
+      "is_bot": true,
+      "sequence_number": 158419368,
+      "event_timestamp": 1791886537000000
+    },
+    {
+      "event_id": "3143e129-65c1-4221-9eb3-611fd8ec5a72",
+      "wiki": "commonswiki",
+      "page_title": "File:Mapillary (federicodebetto) 2025-01-18 09H16M16S000 (690174103394436 at aVc9nMFyzB7PlTjXShpCm1) taken with Insta360 Insta360 Titan.jpg",
+      "user_name": "PantheraLeo1359531",
+      "event_type": "edit",
+      "bytes_changed": 6029,
+      "is_bot": false,
+      "sequence_number": 3498324020,
+      "event_timestamp": 1791886538000000
+    },
+    {
+      "event_id": "6da6dd2c-b646-448d-a476-4caf456496c5",
+      "wiki": "fiwiki",
+      "page_title": "Wikipedia:Viikon kilpailu/Viikon kilpailu 2026-42",
+      "user_name": "UKBot",
+      "event_type": "edit",
+      "bytes_changed": 1440,
+      "is_bot": true,
+      "sequence_number": 57714146,
+      "event_timestamp": 1791886536000000
+    }
+  ]
+}

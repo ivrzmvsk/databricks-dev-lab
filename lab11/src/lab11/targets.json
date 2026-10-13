@@ -1,0 +1,18 @@
+{
+  "personal": {
+    "profile": "personal-env",
+    "host": "https://dbc-ab9a5afe-c151.cloud.databricks.com",
+    "endpoint": "https://7474655630219513.zerobus.us-east-2.cloud.databricks.com",
+    "schema": "workspace.ivanrazumovskyi_lab11_zerobus",
+    "warehouse": "6fec7d20a958edd1"
+  },
+  "azure_trial_2": {
+    "profile": "azure_trial_2",
+    "host": "https://adb-7405618361895520.0.azuredatabricks.net",
+    "endpoint": "https://7405618361895520.zerobus.eastus.azuredatabricks.net",
+    "schema": "dbr_dev.ivanrazumovskyi_lab11_zerobus",
+    "warehouse": "d8b8ff9942968cb8",
+    "ingest_host": "https://adb-7405618361895520.0.azuredatabricks.net",
+    "ingest_endpoint": "https://7405618361895520.zerobus.eastus.azuredatabricks.net"
+  }
+}
