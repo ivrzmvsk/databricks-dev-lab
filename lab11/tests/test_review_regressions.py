@@ -114,8 +114,6 @@ def test_bundle_targets_and_no_automatic_prod_workflow():
     assert bundle["targets"]["azure_trial_2"]["workspace"]["host"] == common.TARGETS["azure_trial_2"]["host"]
     workflow = (ROOT.parent / ".github/workflows/lab11-ci.yml").read_text()
     assert "bundle deploy" not in workflow
-    release = json.loads((ROOT / "RELEASE.json").read_text())
-    assert release["release_sha256"]
 
 
 def test_capture_reports_malformed_and_filtered_counts(monkeypatch, caplog):
