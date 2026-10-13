@@ -2,6 +2,7 @@
 
 import pytest
 
+from lab10.notebook_runner import run_notebook
 from lab10.pipeline import Pipeline
 
 
@@ -100,7 +101,7 @@ def test_completed_simulation_has_no_writes():
 
 def test_federation_reports_drift_and_warms_both_paths():
     sql = RecordingSQL(drift=True)
-    result = Pipeline(sql).federation()
+    result = run_notebook("01_federation", Pipeline(sql))
     assert result["snapshot_comparison"] == {
         "foreign_only_rows": 2,
         "snapshot_only_rows": 1,
@@ -112,4 +113,28 @@ def test_federation_reports_drift_and_warms_both_paths():
     assert len(queries) == 8  # two unmeasured warm-ups + six measured queries
     assert queries[:2] == queries[2:4] == queries[4:6] == queries[6:8]
     assert [item["path"] for item in result["timings"]] == ["foreign", "delta"] * 3
+    assert sql.writes == []
+
+
+def test_setup_notebook_preserves_an_existing_checkpoint():
+    sql = RecordingSQL(latest=5)
+    sql.checkpoint = 5
+
+    def nonempty_source(statement):
+        if statement.startswith("SELECT count(*) FROM workspace.ivanrazumovskyi_lab10.wiki_projects_source"):
+            return [{"count": 55}]
+        return sql(statement)
+
+    result = run_notebook("00_setup", Pipeline(nonempty_source))
+    assert result == {"baseline_projects": 55, "checkpoint": 5}
+    checkpoint_merge = next(s for s in sql.writes if s.startswith("MERGE INTO") and "cdc_checkpoint" in s)
+    assert "WHEN NOT MATCHED THEN INSERT" in checkpoint_merge
+    assert "WHEN MATCHED" not in checkpoint_merge
+    assert sql.checkpoint == 5
+
+
+def test_validation_notebook_rejects_a_missing_insert():
+    sql = RecordingSQL()
+    with pytest.raises(AssertionError, match="Inserted demo project missing"):
+        run_notebook("03_validate", Pipeline(sql))
     assert sql.writes == []

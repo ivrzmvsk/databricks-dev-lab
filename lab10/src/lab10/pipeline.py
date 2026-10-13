@@ -6,7 +6,6 @@ idempotent event keys and publishes the checkpoint only after reconciliation.
 """
 
 import re
-import time
 from dataclasses import dataclass
 
 COLUMNS = (
@@ -84,45 +83,6 @@ class Pipeline:
     def latest(self):
         return int(self.sql(f"DESCRIBE HISTORY {self.source} LIMIT 1")[0]["version"])
 
-    def setup(self):
-        self.sql(f"CREATE SCHEMA IF NOT EXISTS {self.c.catalog}.{self.c.schema}")
-        external = self.c.foreign("wiki_projects")
-        self.sql(f"""CREATE TABLE IF NOT EXISTS {self.source} USING DELTA
-            TBLPROPERTIES ('delta.enableChangeDataFeed'='true')
-            AS SELECT {FIELDS} FROM {external}""")
-        if not self.count(f"SELECT count(*) FROM {self.source}"):
-            raise AssertionError("Refusing to initialize from empty external projects")
-        # Version 0 remains the reproducible baseline even after simulations.
-        self.sql(f"""CREATE TABLE IF NOT EXISTS {self.c.table("wiki_projects_snapshot")}
-            USING DELTA AS SELECT {FIELDS} FROM {self.source} VERSION AS OF 0""")
-        self.sql(f"""CREATE TABLE IF NOT EXISTS {self.c.table("project_owners_snapshot")}
-            USING DELTA AS SELECT * FROM {self.c.foreign("project_owners")}""")
-        self.sql(f"""CREATE TABLE IF NOT EXISTS {self.current} USING DELTA AS
-            SELECT {FIELDS}, CAST(0 AS BIGINT) AS source_commit_version
-            FROM {self.source} VERSION AS OF 0""")
-        self.sql(f"""CREATE TABLE IF NOT EXISTS {self.history} USING DELTA AS
-            SELECT {FIELDS}, _commit_version AS source_commit_version,
-              _commit_timestamp AS valid_from, CAST(NULL AS TIMESTAMP) AS valid_to,
-              CAST(NULL AS BIGINT) AS valid_to_version, true AS is_current
-            FROM table_changes('{self.source}', 0, 0) WHERE _change_type='insert'""")
-        self.sql(f"""CREATE TABLE IF NOT EXISTS {self.audit} USING DELTA AS
-            SELECT * FROM table_changes('{self.source}', 0, 0)""")
-        self.sql(f"""CREATE TABLE IF NOT EXISTS {self.checkpoint}
-            (consumer STRING, source_id STRING, last_processed_version BIGINT)
-            USING DELTA""")
-        self.sql(f"""MERGE INTO {self.checkpoint} t
-            USING (SELECT 'wiki_projects' AS consumer, '{self.detail()}' AS source_id,
-                          CAST(0 AS BIGINT) AS last_processed_version) s
-            ON t.consumer=s.consumer
-            WHEN NOT MATCHED THEN INSERT *""")
-        self.sql(f"""CREATE TABLE IF NOT EXISTS {self.c.table("simulation_batches")}
-            (batch STRING, completed_at TIMESTAMP) USING DELTA""")
-        state = self.state()
-        return {
-            "baseline_projects": self.count(f"SELECT count(*) FROM {self.source} VERSION AS OF 0"),
-            "checkpoint": state,
-        }
-
     def state(self):
         rows = self.sql(f"SELECT * FROM {self.checkpoint}")
         if len(rows) != 1 or rows[0]["consumer"] != "wiki_projects":
@@ -133,70 +93,6 @@ class Pipeline:
         if version < 0 or version > self.latest():
             raise AssertionError("Invalid checkpoint version")
         return version
-
-    def federation(self):
-        external = self.c.foreign("wiki_projects")
-        snapshot = self.c.table("wiki_projects_snapshot")
-        # Drift is expected for an operational source; keep the frozen snapshot.
-        comparison = {}
-        for label, left, right in (
-            ("foreign_only_rows", external, snapshot),
-            ("snapshot_only_rows", snapshot, external),
-        ):
-            comparison[label] = self.count(
-                f"SELECT count(*) FROM ((SELECT {FIELDS} FROM {left}) "
-                f"EXCEPT ALL (SELECT {FIELDS} FROM {right}))"
-            )
-        comparison["matches_snapshot"] = not any(comparison.values())
-        queries = {
-            label: f"SELECT status, count(*) AS projects FROM {table} WHERE status='active' GROUP BY status"
-            for label, table in (("foreign", external), ("delta", snapshot))
-        }
-        # Exclude one warm-up per path; interleave measured paths to reduce order bias.
-        for query in queries.values():
-            self.sql(query)
-        measurements = []
-        aggregates = {}
-        for iteration in range(3):
-            for label, query in queries.items():
-                start = time.monotonic()
-                rows = self.sql(query)
-                measurements.append(
-                    {
-                        "path": label,
-                        "iteration": iteration + 1,
-                        "elapsed_seconds": round(time.monotonic() - start, 3),
-                    }
-                )
-                aggregates[label] = rows
-        # LEFT JOIN retains all existing facts and proves the operational lookup covers every key.
-        fact = f"{self.c.catalog}.{self.c.gold_schema}.fact_edits"
-        join = f"""FROM {fact} f LEFT JOIN {external} p ON f.wiki=p.wiki_id
-            LEFT JOIN {self.c.foreign("project_owners")} o ON p.owner_id=o.owner_id"""
-        self.assert_zero(
-            f"SELECT count(*) {join} WHERE p.wiki_id IS NULL OR o.owner_id IS NULL", "Unmapped fact rows"
-        )
-        fact_count = self.count(f"SELECT count(*) FROM {fact}")
-        joined_count = self.count(f"SELECT count(*) {join}")
-        if not fact_count or joined_count != fact_count:
-            raise AssertionError("Hybrid join must preserve every fact exactly once")
-        sample = self.sql(f"""SELECT p.wiki_id, p.language_name, o.team_name, count(*) AS edits
-            {join} GROUP BY p.wiki_id,p.language_name,o.team_name ORDER BY edits DESC LIMIT 10""")
-        plans = {}
-        for label, table in (("foreign", external), ("delta", snapshot)):
-            plans[label] = self.sql(f"EXPLAIN FORMATTED SELECT wiki_id FROM {table} WHERE status='active'")
-        return {
-            "snapshot_comparison": comparison,
-            "aggregates": aggregates,
-            "fact_rows": fact_count,
-            "joined_rows": joined_count,
-            "sample": sample,
-            "timings": measurements,
-            "plans": plans,
-            "timing_note": "One warm-up per path excluded; paths interleaved. Client wall time includes "
-            "network/polling and result caches; Neon scale-to-zero can affect cold queries. "
-            "Aggregates may differ when the operational source has changed.",
-        }
 
     def changes(self, start, end):
         return f"table_changes('{self.source}', {int(start)}, {int(end)})"
@@ -341,19 +237,3 @@ class Pipeline:
         self.sql(f"""MERGE INTO {marker} t USING (SELECT '{batch}' batch, current_timestamp() completed_at) s
             ON t.batch=s.batch WHEN NOT MATCHED THEN INSERT *""")
         return {"batch": batch, "status": "APPLIED"}
-
-    def assert_scenario(self):
-        if self.count(f"SELECT count(*) FROM {self.current} WHERE wiki_id='plwiki'"):
-            raise AssertionError("Deleted project remains in target")
-        if self.count(f"SELECT count(*) FROM {self.current} WHERE wiki_id='lab10_demo'") != 1:
-            raise AssertionError("Inserted demo project missing or duplicated")
-        if self.count(f"SELECT count(*) FROM {self.current} WHERE wiki_id='enwiki' AND owner_id=3") != 1:
-            raise AssertionError("Late committed update was not applied")
-        if self.count(f"SELECT count(*) FROM {self.history} WHERE wiki_id='enwiki'") != 4:
-            raise AssertionError("Intermediate SCD2 updates were lost")
-        self.equal(
-            f"SELECT * FROM {self.changes(0, self.state())}",
-            f"SELECT * FROM {self.audit}",
-            "Full demonstration audit mismatch",
-        )
-        return self.validate()

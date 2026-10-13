@@ -39,7 +39,6 @@ targets:
       name_prefix: ''
       jobs_max_concurrent_runs: 1
 
-  # Promotion authorized after complete DEV validation.
   azure_trial_2:
     mode: production
     run_as:

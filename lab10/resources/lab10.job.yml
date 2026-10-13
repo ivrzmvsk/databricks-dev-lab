@@ -37,3 +37,10 @@ resources:
           timeout_seconds: 1800
           notebook_task:
             notebook_path: ../notebooks/02_cdc.py
+        - task_key: validate
+          depends_on:
+            - task_key: cdc
+          max_retries: 0
+          timeout_seconds: 1200
+          notebook_task:
+            notebook_path: ../notebooks/03_validate.py

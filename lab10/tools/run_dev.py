@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from common import ROOT, sql_client
 
 sys.path.insert(0, str(ROOT / "src"))
+from lab10.notebook_runner import run_notebook  # noqa: E402
 from lab10.pipeline import Pipeline  # noqa: E402
 
 
@@ -14,9 +15,9 @@ def main():
     p = Pipeline(sql_client())
     report = {"environment": "personal-env", "started_at": datetime.now(timezone.utc).isoformat()}
     try:
-        report["setup"] = p.setup()
+        report["setup"] = run_notebook("00_setup", p)
         print("Setup: PASS", flush=True)
-        report["federation"] = p.federation()
+        report["federation"] = run_notebook("01_federation", p)
         print("Foreign catalog, Delta comparison and hybrid join: PASS", flush=True)
         report["batch1"] = p.simulate("batch1")
         if p.latest() > p.state():
@@ -37,11 +38,9 @@ def main():
         report["batch2"] = p.simulate("batch2")
         report["sync2"] = p.sync()
         print("Second batch, intermediate history and late business timestamp: PASS", flush=True)
-        before = p.validate()
-        report["rerun"] = p.sync()
-        assert report["rerun"]["status"] == "NO_NEW_CHANGES"
-        assert p.validate() == before, "No-op rerun changed the targets"
-        report["validation"] = p.assert_scenario()
+        checks = run_notebook("03_validate", p)
+        report["rerun"] = checks["rerun"]
+        report["validation"] = checks["validation"]
         report["status"] = "PASS"
         print(json.dumps(report["validation"]), flush=True)
     except Exception as exc:
