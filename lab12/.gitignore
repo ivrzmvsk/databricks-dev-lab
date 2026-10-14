@@ -1,0 +1,21 @@
+# Local execution, credentials and tooling
+.state/
+.databricks/
+.venv/
+.agents/
+.ai-dev-kit/
+.codex/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.env*
+*-tests.xml
+# Original and superseded teaching datasets remain local.
+dataset/games_*.csv
+dataset/steam_rag_*
+
+# Optional local evidence; deployment does not require these files.
+/DEV_RESULT.json
+/release_review.json

@@ -1,0 +1,47 @@
+resources:
+  jobs:
+    steam_rag:
+      name: lab12-board-rag-${bundle.target}
+      max_concurrent_runs: 1
+      timeout_seconds: 2700
+      queue:
+        enabled: false
+      parameters:
+        - name: code_root
+          default: ${workspace.file_path}
+        - name: target
+          default: ${bundle.target}
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: vector_endpoint
+          default: ${var.vector_endpoint}
+        - name: embedding_model
+          default: ${var.embedding_model}
+        - name: chat_model
+          default: ${var.chat_model}
+        - name: warehouse_id
+          default: ${var.warehouse_id}
+        - name: experiment_name
+          default: /Users/${workspace.current_user.userName}/lab12-board-${bundle.target}
+      tasks:
+        - task_key: ingest
+          timeout_seconds: 600
+          max_retries: 0
+          notebook_task:
+            notebook_path: ../notebooks/01_ingest.py
+        - task_key: index
+          depends_on:
+            - task_key: ingest
+          timeout_seconds: 1500
+          max_retries: 0
+          notebook_task:
+            notebook_path: ../notebooks/02_sync_index.py
+        - task_key: evaluate
+          depends_on:
+            - task_key: index
+          timeout_seconds: 1200
+          max_retries: 0
+          notebook_task:
+            notebook_path: ../notebooks/03_evaluate.py
