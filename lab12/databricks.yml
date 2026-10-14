@@ -24,31 +24,17 @@ workspace:
 
 sync:
   include:
-    - src/**
-    - notebooks/**
+    - src/**/*.py
+    - notebooks/*.py
     - dataset/board_games.json
     - dataset/board_games.manifest.json
-    - DEV_RESULT.json
-    - release_review.json
     - databricks.yml
-    - resources/**
+    - resources/*.yml
     - requirements-lock.txt
     - pyproject.toml
-    - tools/**
-    - scripts/**
+    - tools/*.py
   exclude:
-    - dataset/games_*.csv
-    - dataset/steam_rag_*
-    - .venv/**
-    - .state/**
     - tests/**
-    - .env*
-    - '**/__pycache__/**'
-    - '**/*.pyc'
-    - '**/*.egg-info/**'
-    - .agents/**
-    - .ai-dev-kit/**
-    - .codex/**
 
 targets:
   dev:

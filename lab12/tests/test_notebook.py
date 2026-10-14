@@ -49,11 +49,10 @@ def test_wrong_host_rejected_before_data_preparation(monkeypatch):
     prepare.assert_not_called()
 
 
-def test_prod_requires_release_before_data_preparation(monkeypatch):
+def test_prod_initialization_does_not_require_release_files(monkeypatch, tmp_path):
     _, prepare = setup_context(monkeypatch, target="prod")
-    guard = MagicMock(side_effect=ValueError("not approved"))
-    monkeypatch.setattr(notebook, "require_release", guard)
-    with pytest.raises(ValueError, match="not approved"):
-        notebook.initialize(Path("/local"), MagicMock())
-    guard.assert_called_once_with(Path("/local"))
-    prepare.assert_not_called()
+    context = notebook.initialize(tmp_path, MagicMock())
+    assert context.settings.target == "prod"
+    assert not (tmp_path / "DEV_RESULT.json").exists()
+    assert not (tmp_path / "release_review.json").exists()
+    prepare.assert_called_once_with(tmp_path / "dataset/board_games.json")

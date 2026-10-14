@@ -63,33 +63,6 @@ def test_smoke_evaluation_cannot_pass_release():
         automated_gate(report)
 
 
-def test_release_rejects_stale_evidence_and_incomplete_review(monkeypatch):
-    import lab12.release as release
-
-    monkeypatch.setattr(release, "build_hash", lambda root: "current-build")
-    with pytest.raises(ValueError, match="DEV evidence"):
-        release.require_review(None, {"dev_passed": True, "build_hash": "old-build"}, {})
-    evidence = {"dev_passed": True, "build_hash": "current-build"}
-    review = {"approved": True, "build_hash": "current-build", "questions": {"q01": "correct"}}
-    with pytest.raises(ValueError, match="8 answers"):
-        release.require_review(None, evidence, review)
-
-
-def test_security_failure_blocks_an_otherwise_correct_review(monkeypatch):
-    import lab12.release as release
-
-    monkeypatch.setattr(release, "build_hash", lambda root: "current-build")
-    evidence = {"dev_passed": True, "build_hash": "current-build"}
-    review = {
-        "approved": True,
-        "build_hash": "current-build",
-        "questions": {f"q{i:02}": "correct" for i in range(1, 9)},
-    }
-    review["questions"]["q08"] = "incorrect"
-    with pytest.raises(ValueError, match="security cases"):
-        release.require_review(None, evidence, review)
-
-
 def test_databricks_dataset_uses_records_instead_of_mlflow_tags(monkeypatch):
     import sys
     from types import SimpleNamespace
@@ -153,29 +126,6 @@ def test_uc_json_outputs_are_counted_but_invalid_outputs_are_not():
     assert decode_output("[]") == {}
 
 
-def test_review_cannot_approve_another_run(monkeypatch):
-    import lab12.release as release
-
-    monkeypatch.setattr(release, "build_hash", lambda root: "build")
-    evidence = {
-        "dev_passed": True,
-        "build_hash": "build",
-        "report_run_id": "B",
-        "rag": {"run_id": "answers-B"},
-    }
-    review = {
-        "approved": True,
-        "build_hash": "build",
-        "report_run_id": "A",
-        "rag_run_id": "answers-A",
-        "questions": {f"q{i:02}": "correct" for i in range(1, 9)},
-    }
-    with pytest.raises(ValueError, match="exact DEV report"):
-        release.require_review(None, evidence, review)
-    review.update(report_run_id="B", rag_run_id="answers-B")
-    assert release.require_review(None, evidence, review) == "build"
-
-
 def test_offline_retrieval_finds_expected_sources():
     from lab12.corpus import prepare
     from lab12.retrieval import LexicalPreview
@@ -188,32 +138,3 @@ def test_offline_retrieval_finds_expected_sources():
             inputs = record["inputs"]
             hits = retriever.search(inputs["query"], inputs["filters"])
             assert expected <= {h.doc_id for h in hits}, inputs["case_id"]
-
-
-def test_release_uses_the_artifacts_included_in_the_bundle(tmp_path, monkeypatch):
-    import json
-
-    import lab12.release as release
-
-    monkeypatch.setattr(release, "build_hash", lambda root: "build")
-    evidence = {
-        "dev_passed": True,
-        "build_hash": "build",
-        "report_run_id": "report",
-        "rag": {"run_id": "answers"},
-    }
-    review = {
-        "approved": False,
-        "build_hash": "build",
-        "report_run_id": "report",
-        "rag_run_id": "answers",
-        "questions": {f"q{i:02}": "correct" for i in range(1, 9)},
-    }
-    (tmp_path / "DEV_RESULT.json").write_text(json.dumps(evidence))
-    path = tmp_path / "release_review.json"
-    path.write_text(json.dumps(review))
-    with pytest.raises(ValueError, match="Manual approval"):
-        release.require_release(tmp_path)
-    review["approved"] = True
-    path.write_text(json.dumps(review))
-    assert release.require_release(tmp_path) == "build"

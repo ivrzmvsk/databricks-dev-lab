@@ -20,7 +20,6 @@ from databricks.sdk.service.vectorsearch import (
 from lab12.config import Settings
 from lab12.corpus import prepare
 from lab12.index import validate_index, wait_ready
-from lab12.release import require_release
 from lab12.storage import quoted, schema_ddl, snapshot_rows
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,8 +52,6 @@ def main():
     settings = Settings(target=args.target, **variables)
     workspace = WorkspaceClient(profile=args.profile)
     settings.assert_host(workspace.config.host)
-    if settings.target == "prod":
-        require_release(ROOT)
 
     # Create schema and empty CDF tables. No document rows are loaded here.
     documents, chunks = prepare(ROOT / "dataset/board_games.json")

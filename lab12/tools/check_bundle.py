@@ -14,10 +14,15 @@ def main():
     assert targets["dev"]["default"] is True
     assert targets["dev"]["workspace"]["profile"] == "personal-env"
     assert targets["prod"]["workspace"]["profile"] == "azure_trial_2"
-    assert "dataset/games_*.csv" in bundle["sync"]["exclude"]
+    ignored = (ROOT / ".gitignore").read_text().splitlines()
+    for pattern in ("dataset/games_*.csv", "dataset/steam_rag_*", ".state/", ".venv/", ".env*"):
+        assert pattern in ignored
     assert "dataset/board_games.json" in bundle["sync"]["include"]
-    for artifact in ("databricks.yml", "resources/**"):
+    for artifact in ("databricks.yml", "resources/*.yml"):
         assert artifact in bundle["sync"]["include"]
+    for kind in ("include", "exclude"):
+        for pattern in bundle["sync"].get(kind, []):
+            assert list(ROOT.glob(pattern)), f"Unmatched sync.{kind} pattern: {pattern}"
     job = yaml.safe_load((ROOT / "resources/steam.job.yml").read_text())["resources"]["jobs"][
         "steam_rag"
     ]
