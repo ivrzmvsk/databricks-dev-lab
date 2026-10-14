@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lab12-board-games"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["tiktoken>=0.12,<1", "databricks-sdk>=0.152,<1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=9,<10", "ruff>=0.17,<1", "PyYAML>=6,<7"]
+ai = ["mlflow[databricks]>=3.11.1,<4", "databricks-agents>=1,<2"]
+
+[project.scripts]
+board-rag = "lab12.cli:main"
+steam-rag = "lab12.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

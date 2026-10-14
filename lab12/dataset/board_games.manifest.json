@@ -1,0 +1,20 @@
+{
+  "source": "Original fictional documents authored for LAB12; no external dataset",
+  "synthetic": true,
+  "output_sha256": "a9386611420f87382956ea4ef844032506a06226e784353ffd47891712532223",
+  "document_ids": [
+    "BG01",
+    "BG02",
+    "BG03",
+    "BG04",
+    "BG05",
+    "BG06",
+    "BG07",
+    "BG08",
+    "BG09",
+    "BG10",
+    "BG11",
+    "BG12"
+  ],
+  "documents": 12
+}

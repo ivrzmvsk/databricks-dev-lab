@@ -1,0 +1,76 @@
+bundle:
+  name: lab12_steam_rag
+  databricks_cli_version: '>= 1.10.0'
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    default: workspace
+  schema:
+    default: ivanrazumovskyi_lab12_steam
+  vector_endpoint:
+    default: ivanrazumovskyi-lab12-steam-dev
+  embedding_model:
+    default: databricks-qwen3-embedding-0-6b
+  chat_model:
+    default: databricks-qwen3-next-80b-a3b-instruct
+  warehouse_id:
+    description: Existing warehouse for UC trace storage; supplied by DEV preflight
+
+workspace:
+  root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+sync:
+  include:
+    - src/**
+    - notebooks/**
+    - dataset/board_games.json
+    - dataset/board_games.manifest.json
+    - DEV_RESULT.json
+    - release_review.json
+    - databricks.yml
+    - resources/**
+    - requirements-lock.txt
+    - pyproject.toml
+    - tools/**
+    - scripts/**
+  exclude:
+    - dataset/games_*.csv
+    - dataset/steam_rag_*
+    - .venv/**
+    - .state/**
+    - tests/**
+    - .env*
+    - '**/__pycache__/**'
+    - '**/*.pyc'
+    - '**/*.egg-info/**'
+    - .agents/**
+    - .ai-dev-kit/**
+    - .codex/**
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      host: https://dbc-ab9a5afe-c151.cloud.databricks.com
+      profile: personal-env
+    presets:
+      jobs_max_concurrent_runs: 1
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-7405618361895520.0.azuredatabricks.net
+      profile: azure_trial_2
+      root_path: /Workspace/Users/ivanrazumovskyi@softserve.academy/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: dbr_dev
+      schema: ivanrazumovskyi_lab12_board_games_prod
+      vector_endpoint: ivanrazumovskyi-lab12-board-games-prod
+    run_as:
+      user_name: ivanrazumovskyi@softserve.academy
+    permissions:
+      - user_name: ivanrazumovskyi@softserve.academy
+        level: CAN_MANAGE
